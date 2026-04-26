@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+{% block title %}Settings — Content Engine{% endblock %}
+
+{% block content %}
+<div x-data="settingsApp()">
+
+    <!-- Page Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold" style="color: var(--text-primary);">Settings</h1>
+        <p class="text-sm mt-1" style="color: var(--text-subtle);">Configure API keys and model preferences</p>
+    </div>
+
+    <!-- OpenRouter -->
+    <div class="service-card">
+        <div class="service-header">
+            <div class="service-name">
+                <span style="font-size: 20px;">&#129302;</span>
+                OpenRouter
+            </div>
+            <div class="service-status"
+                 :class="services.openrouter.connected ? 'connected' : 'disconnected'">
+                <template x-if="services.openrouter.connected">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Connected
+                    </span>
+                </template>
+                <template x-if="!services.openrouter.connected">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                        </svg>
+                        Not configured
+                    </span>
+                </template>
+            </div>
+        </div>
+        <p class="service-desc">Routes LLM calls to Gemini 2.5 Flash or Claude Sonnet 4 for script generation, captions, and image prompts.</p>
+
+        <div class="mb-4">
+            <label class="input-label">API Key</label>
+            <div class="input-group">
+                <input :type="services.openrouter.showKey ? 'text' : 'password'"
+                       class="input" style="padding-right: 42px;"
+                       x-model="services.openrouter.key"
+                       placeholder="sk-or-...">
+                <button class="input-toggle" @click="services.openrouter.showKey = !services.openrouter.showKey">
+                    <i x-show="!services.openrouter.showKey" data-lucide="eye" class="w-4 h-4"></i>
+                    <i x-show="services.openrouter.showKey" data-lucide="eye-off" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="input-label">Model</label>
+            <select class="input" x-model="services.openrouter.model">
+                <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (fast, cheap)</option>
+                <option value="anthropic/claude-sonnet-4">Claude Sonnet 4 (powerful)</option>
+                <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                <option value="openai/gpt-4o">GPT-4o</option>
+            </select>
+        </div>
+
+        <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm" @click="saveService('openrouter')">
+                <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                Save
+            </button>
+            <button class="btn btn-outline btn-sm"
+                    @click="testConnection('openrouter')"
+                    :disabled="!services.openrouter.key || services.openrouter.testing">
+                <template x-if="!services.openrouter.testing">
+                    <span class="flex items-center gap-1">
+                        <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                        Test Connection
+                    </span>
+                </template>
+                <template x-if="services.openrouter.testing">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        Testing...
+                    </span>
+                </template>
+            </button>
+        </div>
+    </div>
+
+    <!-- FireCrawl -->
+    <div class="service-card">
+        <div class="service-header">
+            <div class="service-name">
+                <span style="font-size: 20px;">&#128375;</span>
+                FireCrawl
+            </div>
+            <div class="service-status"
+                 :class="services.firecrawl.connected ? 'connected' : 'disconnected'">
+                <template x-if="services.firecrawl.connected">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Connected
+                    </span>
+                </template>
+                <template x-if="!services.firecrawl.connected">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                        </svg>
+                        Not configured
+                    </span>
+                </template>
+            </div>
+        </div>
+        <p class="service-desc">Scrapes URLs into clean markdown. Used when you paste a link to extract article content.</p>
+
+        <div class="mb-4">
+            <label class="input-label">API Key</label>
+            <div class="input-group">
+                <input :type="services.firecrawl.showKey ? 'text' : 'password'"
+                       class="input" style="padding-right: 42px;"
+                       x-model="services.firecrawl.key"
+                       placeholder="fc-...">
+                <button class="input-toggle" @click="services.firecrawl.showKey = !services.firecrawl.showKey">
+                    <i x-show="!services.firecrawl.showKey" data-lucide="eye" class="w-4 h-4"></i>
+                    <i x-show="services.firecrawl.showKey" data-lucide="eye-off" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm" @click="saveService('firecrawl')">
+                <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                Save
+            </button>
+            <button class="btn btn-outline btn-sm"
+                    @click="testConnection('firecrawl')"
+                    :disabled="!services.firecrawl.key || services.firecrawl.testing">
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                Test Connection
+            </button>
+        </div>
+    </div>
+
+    <!-- Kie.ai -->
+    <div class="service-card">
+        <div class="service-header">
+            <div class="service-name">
+                <span style="font-size: 20px;">&#127912;</span>
+                Kie.ai
+            </div>
+            <div class="service-status"
+                 :class="services.kie.connected ? 'connected' : 'disconnected'">
+                <template x-if="services.kie.connected">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Connected
+                    </span>
+                </template>
+                <template x-if="!services.kie.connected">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                        </svg>
+                        Not configured
+                    </span>
+                </template>
+            </div>
+        </div>
+        <p class="service-desc">AI image generation (Nano Banana Pro) and video generation (Veo 3.1). Uses async polling pattern.</p>
+
+        <div class="mb-4">
+            <label class="input-label">API Key</label>
+            <div class="input-group">
+                <input :type="services.kie.showKey ? 'text' : 'password'"
+                       class="input" style="padding-right: 42px;"
+                       x-model="services.kie.key"
+                       placeholder="Your Kie.ai API key">
+                <button class="input-toggle" @click="services.kie.showKey = !services.kie.showKey">
+                    <i x-show="!services.kie.showKey" data-lucide="eye" class="w-4 h-4"></i>
+                    <i x-show="services.kie.showKey" data-lucide="eye-off" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="input-label">Image Model</label>
+            <select class="input" x-model="services.kie.imageModel">
+                <option value="google/nano-banana-pro">Nano Banana Pro (recommended)</option>
+                <option value="flux/schnell">FLUX Schnell (fast)</option>
+            </select>
+        </div>
+
+        <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm" @click="saveService('kie')">
+                <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                Save
+            </button>
+            <button class="btn btn-outline btn-sm"
+                    @click="testConnection('kie')"
+                    :disabled="!services.kie.key || services.kie.testing">
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                Test Connection
+            </button>
+        </div>
+    </div>
+
+    <!-- GetLate.dev -->
+    <div class="service-card">
+        <div class="service-header">
+            <div class="service-name">
+                <span style="font-size: 20px;">&#128640;</span>
+                GetLate.dev
+            </div>
+            <div class="service-status"
+                 :class="services.getlate.connected ? 'connected' : 'disconnected'">
+                <template x-if="services.getlate.connected">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Connected
+                    </span>
+                </template>
+                <template x-if="!services.getlate.connected">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                        </svg>
+                        Not configured
+                    </span>
+                </template>
+            </div>
+        </div>
+        <p class="service-desc">Multi-platform social media publishing. Connect your Instagram, TikTok, LinkedIn, and more.</p>
+
+        <div class="mb-4">
+            <label class="input-label">API Key</label>
+            <div class="input-group">
+                <input :type="services.getlate.showKey ? 'text' : 'password'"
+                       class="input" style="padding-right: 42px;"
+                       x-model="services.getlate.key"
+                       placeholder="Your GetLate.dev API key">
+                <button class="input-toggle" @click="services.getlate.showKey = !services.getlate.showKey">
+                    <i x-show="!services.getlate.showKey" data-lucide="eye" class="w-4 h-4"></i>
+                    <i x-show="services.getlate.showKey" data-lucide="eye-off" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Connected Accounts -->
+        <div x-show="services.getlate.connected" class="mb-4">
+            <label class="input-label">Connected Accounts</label>
+            <div class="space-y-2">
+                <template x-for="acct in services.getlate.accounts" :key="acct.id">
+                    <div class="flex items-center justify-between p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border);">
+                        <div class="flex items-center gap-2">
+                            <span class="badge" :class="'badge-' + acct.platform" x-text="acct.platform"></span>
+                            <span class="text-sm" style="color: var(--text-muted);" x-text="acct.name"></span>
+                        </div>
+                        <span class="text-xs" style="color: var(--success);">Active</span>
+                    </div>
+                </template>
+            </div>
+            <p x-show="services.getlate.accounts.length === 0" class="text-xs mt-2" style="color: var(--text-subtle);">
+                No accounts connected yet. Connect accounts in your GetLate.dev dashboard.
+            </p>
+        </div>
+
+        <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm" @click="saveService('getlate')">
+                <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                Save
+            </button>
+            <button class="btn btn-outline btn-sm"
+                    @click="testConnection('getlate')"
+                    :disabled="!services.getlate.key || services.getlate.testing">
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                Test Connection
+            </button>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function settingsApp() {
+    return {
+        services: {
+            openrouter: {
+                key: {{ (settings.get('openrouter_api_key', '') if settings else '')|tojson }},
+                model: {{ (settings.get('openrouter_model', 'google/gemini-2.5-flash') if settings else 'google/gemini-2.5-flash')|tojson }},
+                connected: {{ 'true' if settings and settings.get('openrouter_api_key') else 'false' }},
+                showKey: false,
+                testing: false
+            },
+            firecrawl: {
+                key: {{ (settings.get('firecrawl_api_key', '') if settings else '')|tojson }},
+                connected: {{ 'true' if settings and settings.get('firecrawl_api_key') else 'false' }},
+                showKey: false,
+                testing: false
+            },
+            kie: {
+                key: {{ (settings.get('kie_api_key', '') if settings else '')|tojson }},
+                imageModel: {{ (settings.get('kie_image_model', 'google/nano-banana-pro') if settings else 'google/nano-banana-pro')|tojson }},
+                connected: {{ 'true' if settings and settings.get('kie_api_key') else 'false' }},
+                showKey: false,
+                testing: false
+            },
+            getlate: {
+                key: {{ (settings.get('getlate_api_key', '') if settings else '')|tojson }},
+                connected: {{ 'true' if settings and settings.get('getlate_api_key') else 'false' }},
+                showKey: false,
+                testing: false,
+                accounts: []
+            }
+        },
+
+        saveService(name) {
+            const svc = this.services[name];
+            const payload = {};
+
+            switch(name) {
+                case 'openrouter':
+                    payload.openrouter_api_key = svc.key;
+                    payload.openrouter_model = svc.model;
+                    break;
+                case 'firecrawl':
+                    payload.firecrawl_api_key = svc.key;
+                    break;
+                case 'kie':
+                    payload.kie_api_key = svc.key;
+                    payload.kie_image_model = svc.imageModel;
+                    break;
+                case 'getlate':
+                    payload.getlate_api_key = svc.key;
+                    break;
+            }
+
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                svc.connected = !!svc.key;
+                showToast(name.charAt(0).toUpperCase() + name.slice(1) + ' settings saved!', 'success');
+            })
+            .catch(() => showToast('Failed to save settings', 'error'));
+        },
+
+        testConnection(name) {
+            const svc = this.services[name];
+            svc.testing = true;
+
+            fetch('/api/test-connection/' + name, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    svc.testing = false;
+                    if (data.success) {
+                        svc.connected = true;
+                        showToast(name + ' connection successful!', 'success');
+                    } else {
+                        showToast('Connection failed: ' + (data.error || 'Unknown error'), 'error');
+                    }
+                })
+                .catch(() => {
+                    svc.testing = false;
+                    showToast('Connection test failed', 'error');
+                });
+        }
+    };
+}
+</script>
+{% endblock %}

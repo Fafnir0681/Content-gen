@@ -1,0 +1,582 @@
+{% extends "base.html" %}
+{% block title %}Create Content — Content Engine{% endblock %}
+
+{% block content %}
+<div x-data="createApp()" x-init="$watch('input', () => detectInputType())">
+
+    <!-- Page Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold" style="color: var(--text-primary);">Create Content</h1>
+        <p class="text-sm mt-1" style="color: var(--text-subtle);">Paste a URL or describe your content idea</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         TOP SECTION — INPUT FORM
+         ═══════════════════════════════════════════════════ -->
+    <div class="card mb-6" x-show="!generating || true">
+
+        <!-- Textarea Input -->
+        <div class="mb-5">
+            <label class="input-label">Content Source</label>
+            <textarea
+                x-model="input"
+                class="input"
+                rows="4"
+                placeholder="Paste a URL or type your content idea..."
+                :disabled="generating"
+                style="min-height: 120px; font-size: 15px;"></textarea>
+
+            <!-- Auto-detect badge -->
+            <div x-show="input.length > 0" x-transition class="mt-2">
+                <span x-show="inputType === 'url'" class="input-detect-badge url">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101" />
+                    </svg>
+                    URL detected &mdash; will scrape article
+                </span>
+                <span x-show="inputType === 'idea'" class="input-detect-badge idea">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    Idea mode &mdash; will generate from scratch
+                </span>
+            </div>
+        </div>
+
+        <!-- Platform Selector -->
+        <div class="mb-5">
+            <label class="input-label">Platform</label>
+            <div class="platform-selector">
+                <template x-for="p in platforms" :key="p.id">
+                    <button class="platform-btn"
+                            :class="{ 'active': platform === p.id }"
+                            @click="platform = p.id"
+                            :disabled="generating">
+                        <span x-text="p.icon"></span>
+                        <span x-text="p.name"></span>
+                    </button>
+                </template>
+            </div>
+        </div>
+
+        <!-- Video Toggle -->
+        <div class="mb-6">
+            <label class="toggle-wrap" @click="!generating && (includeVideo = !includeVideo)">
+                <div class="toggle" :class="{ 'active': includeVideo }"></div>
+                <span class="toggle-label">Include Video Generation</span>
+                <span x-show="includeVideo" class="text-xs" style="color: var(--text-subtle); margin-left: 4px;">(~$0.19 extra)</span>
+            </label>
+        </div>
+
+        <!-- Generate Button -->
+        <button class="btn btn-primary btn-lg btn-full"
+                :disabled="!input.trim() || generating"
+                @click="startGeneration()">
+            <template x-if="!generating">
+                <span class="flex items-center gap-2">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                    Generate Content
+                </span>
+            </template>
+            <template x-if="generating">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Generating...
+                </span>
+            </template>
+        </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         BOTTOM SECTION — PIPELINE X-RAY
+         (hidden until Generate is clicked)
+         ═══════════════════════════════════════════════════ -->
+    <div x-show="pipelineVisible" x-transition.duration.500ms>
+
+        <!-- Pipeline Progress Bar -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="card-title flex items-center gap-2">
+                    <i data-lucide="activity" class="w-4 h-4" style="color: var(--gold);"></i>
+                    Automation Pipeline
+                </div>
+                <div x-show="pipelineComplete" class="badge badge-ready">Complete</div>
+                <div x-show="pipelineError" class="badge badge-error">Error</div>
+            </div>
+
+            <div class="pipeline-bar">
+                <template x-for="(stageKey, idx) in stageOrder" :key="stageKey">
+                    <template x-if="true">
+                        <div class="flex items-center">
+                            <!-- Connector (not before first) -->
+                            <div x-show="idx > 0"
+                                 class="pipeline-connector"
+                                 :class="{
+                                     'completed': stages[stageKey].status === 'completed' || isStageAfterCompleted(stageKey),
+                                     'active': stages[stageKey].status === 'active',
+                                     'skipped': stages[stageKey].status === 'skipped'
+                                 }"></div>
+
+                            <!-- Stage Node -->
+                            <div class="pipeline-stage"
+                                 :class="stages[stageKey].status">
+                                <div class="pipeline-node">
+                                    <template x-if="stages[stageKey].status === 'waiting'">
+                                        <span style="font-size: 14px; color: var(--text-subtle);" x-text="idx + 1"></span>
+                                    </template>
+                                    <template x-if="stages[stageKey].status === 'active'">
+                                        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                    </template>
+                                    <template x-if="stages[stageKey].status === 'completed'">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </template>
+                                    <template x-if="stages[stageKey].status === 'error'">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </template>
+                                    <template x-if="stages[stageKey].status === 'skipped'">
+                                        <span style="font-size: 12px;">&#8212;</span>
+                                    </template>
+                                </div>
+                                <span class="pipeline-stage-label" x-text="stageLabels[stageKey]"></span>
+                                <span class="pipeline-stage-duration"
+                                      x-show="stages[stageKey].duration"
+                                      x-text="stages[stageKey].duration ? stages[stageKey].duration.toFixed(1) + 's' : ''"></span>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+            </div>
+        </div>
+
+        <!-- Live Log Feed -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="card-title flex items-center gap-2">
+                    <i data-lucide="terminal" class="w-4 h-4" style="color: var(--gold);"></i>
+                    Live Log
+                </div>
+                <span class="text-xs" style="color: var(--text-subtle);"
+                      x-text="logs.length + ' entries'"></span>
+            </div>
+
+            <div class="log-feed" x-ref="logFeed">
+                <template x-for="(log, i) in logs" :key="i">
+                    <div class="log-entry"
+                         :data-stage="log.stage"
+                         :class="{ 'polling': log.status === 'polling' }">
+                        <span class="log-timestamp" x-text="log.timestamp"></span>
+                        <span class="log-status-icon" x-html="statusIcon(log.status)"></span>
+                        <span class="stage-tag" x-text="log.stage"></span>
+                        <span class="log-message" x-text="log.message"></span>
+                    </div>
+                </template>
+
+                <!-- Empty state -->
+                <div x-show="logs.length === 0" class="text-center py-8" style="color: var(--text-subtle); font-size: 13px;">
+                    Waiting to start...
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div x-show="result.script || result.imageUrl || result.videoUrl || Object.keys(result.captions).length > 0"
+             x-transition>
+
+            <!-- Script Result -->
+            <div x-show="result.script" class="result-card">
+                <div class="result-card-header">
+                    <div class="result-card-title">
+                        <i data-lucide="file-text" class="w-4 h-4" style="color: var(--stage-script);"></i>
+                        Generated Script
+                    </div>
+                    <button class="btn btn-ghost btn-sm" @click="copyToClipboard(result.script)">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        Copy
+                    </button>
+                </div>
+                <textarea class="input" rows="6" x-model="result.script" style="font-size: 13px;"></textarea>
+            </div>
+
+            <!-- Image Result -->
+            <div x-show="result.imageUrl" class="result-card">
+                <div class="result-card-header">
+                    <div class="result-card-title">
+                        <i data-lucide="image" class="w-4 h-4" style="color: var(--stage-image);"></i>
+                        Generated Image
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-ghost btn-sm" @click="showImagePrompt = !showImagePrompt">
+                            <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
+                            Edit Prompt
+                        </button>
+                        <a :href="result.imageUrl" download class="btn btn-ghost btn-sm">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                </div>
+                <!-- Image Prompt (expandable) -->
+                <div x-show="showImagePrompt" x-transition class="mb-3">
+                    <textarea class="input" rows="2" x-model="result.imagePrompt"
+                              placeholder="Image prompt..." style="font-size: 12px;"></textarea>
+                    <button class="btn btn-outline btn-sm mt-2">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                        Regenerate Image
+                    </button>
+                </div>
+                <img :src="result.imageUrl" alt="Generated content image" class="result-image-preview">
+            </div>
+
+            <!-- Video Result -->
+            <div x-show="result.videoUrl" class="result-card">
+                <div class="result-card-header">
+                    <div class="result-card-title">
+                        <i data-lucide="film" class="w-4 h-4" style="color: var(--stage-video);"></i>
+                        Generated Video
+                    </div>
+                    <a :href="result.videoUrl" download class="btn btn-ghost btn-sm">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        Download
+                    </a>
+                </div>
+                <video :src="result.videoUrl" controls class="result-video-player" style="max-height: 400px;"></video>
+            </div>
+
+            <!-- Captions Result -->
+            <div x-show="Object.keys(result.captions).length > 0" class="result-card" x-data="{ captionTab: platform }">
+                <div class="result-card-header">
+                    <div class="result-card-title">
+                        <i data-lucide="message-square" class="w-4 h-4" style="color: var(--stage-caption);"></i>
+                        Platform Captions
+                    </div>
+                </div>
+                <!-- Tabs -->
+                <div class="tabs">
+                    <template x-for="(cap, pName) in result.captions" :key="pName">
+                        <button class="tab"
+                                :class="{ 'active': captionTab === pName }"
+                                @click="captionTab = pName"
+                                x-text="pName.charAt(0).toUpperCase() + pName.slice(1)"></button>
+                    </template>
+                </div>
+                <!-- Caption Content -->
+                <template x-for="(cap, pName) in result.captions" :key="pName + '-content'">
+                    <div x-show="captionTab === pName">
+                        <div class="flex items-start justify-between gap-4">
+                            <p class="text-sm" style="color: var(--text-muted); white-space: pre-wrap; flex: 1;" x-text="cap"></p>
+                            <button class="btn btn-ghost btn-sm flex-shrink-0" @click="copyToClipboard(cap)">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Cost Summary Bar -->
+        <div class="cost-bar" x-show="totalCost > 0" x-transition>
+            <div class="flex items-center gap-3">
+                <i data-lucide="receipt" class="w-4 h-4" style="color: var(--gold);"></i>
+                <span class="text-sm font-semibold" style="color: var(--text-primary);">Total Cost</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="cost-breakdown" x-show="costBreakdownVisible" @click.outside="costBreakdownVisible = false">
+                    <template x-for="(stageKey) in stageOrder" :key="stageKey + '-cost'">
+                        <span x-show="stages[stageKey].cost > 0">
+                            <span x-text="stageKey"></span>: $<span x-text="stages[stageKey].cost?.toFixed(4)"></span>
+                        </span>
+                    </template>
+                </div>
+                <button class="cost-total" @click="costBreakdownVisible = !costBreakdownVisible"
+                        x-text="'$' + totalCost.toFixed(4)"></button>
+            </div>
+        </div>
+
+        <!-- View in Library Button (after completion) -->
+        <div x-show="pipelineComplete && contentId" x-transition class="mt-4 text-center">
+            <a :href="'/content/' + contentId" class="btn btn-secondary">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+                View in Content Library
+            </a>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function createApp() {
+    return {
+        // Input State
+        input: '',
+        inputType: 'idea',
+        platform: 'instagram',
+        includeVideo: false,
+
+        // Pipeline State
+        generating: false,
+        pipelineVisible: false,
+        pipelineComplete: false,
+        pipelineError: false,
+        contentId: null,
+        showImagePrompt: false,
+        costBreakdownVisible: false,
+
+        // Platform options
+        platforms: [
+            { id: 'instagram', name: 'Instagram', icon: '\uD83D\uDCF7' },
+            { id: 'tiktok', name: 'TikTok', icon: '\uD83C\uDFB5' },
+            { id: 'linkedin', name: 'LinkedIn', icon: '\uD83D\uDCBC' },
+            { id: 'x', name: 'X', icon: '\uD835\uDD4F' },
+            { id: 'youtube', name: 'YouTube', icon: '\u25B6\uFE0F' },
+            { id: 'facebook', name: 'Facebook', icon: '\uD83D\uDC4D' }
+        ],
+
+        // Stage definitions
+        stageOrder: ['scrape', 'script', 'image', 'video', 'caption'],
+        stageLabels: {
+            scrape: 'Scrape',
+            script: 'Script',
+            image: 'Image',
+            video: 'Video',
+            caption: 'Caption'
+        },
+        stages: {
+            scrape:  { status: 'waiting', duration: null, cost: null },
+            script:  { status: 'waiting', duration: null, cost: null },
+            image:   { status: 'waiting', duration: null, cost: null },
+            video:   { status: 'waiting', duration: null, cost: null },
+            caption: { status: 'waiting', duration: null, cost: null }
+        },
+
+        // Log entries
+        logs: [],
+
+        // Results
+        result: {
+            script: '',
+            imageUrl: '',
+            imagePrompt: '',
+            videoUrl: '',
+            captions: {}
+        },
+
+        // Cost tracking
+        totalCost: 0,
+
+        // ── Methods ──────────────────────────────────────
+
+        detectInputType() {
+            const trimmed = this.input.trim();
+            this.inputType = (trimmed.startsWith('http://') || trimmed.startsWith('https://')) ? 'url' : 'idea';
+        },
+
+        isStageAfterCompleted(stageKey) {
+            const idx = this.stageOrder.indexOf(stageKey);
+            if (idx <= 0) return false;
+            const prevStage = this.stageOrder[idx - 1];
+            return this.stages[prevStage].status === 'completed';
+        },
+
+        statusIcon(status) {
+            switch(status) {
+                case 'started':  return '<span style="color: var(--gold);">\u25B6</span>';
+                case 'progress': return '<span style="color: var(--warning);">\u21BB</span>';
+                case 'polling':  return '<span style="color: var(--warning);">\u23F3</span>';
+                case 'complete': return '<span style="color: var(--success);">\u2713</span>';
+                case 'error':    return '<span style="color: var(--danger);">\u2717</span>';
+                case 'skipped':  return '<span style="color: var(--text-subtle);">\u2014</span>';
+                default:         return '<span style="color: var(--text-subtle);">\u00B7</span>';
+            }
+        },
+
+        addLog(stage, status, message) {
+            const now = new Date();
+            const ts = now.toLocaleTimeString('en-US', { hour12: false });
+            this.logs.push({ timestamp: ts, stage, status, message });
+
+            // Auto-scroll log feed
+            this.$nextTick(() => {
+                const feed = this.$refs.logFeed;
+                if (feed) feed.scrollTop = feed.scrollHeight;
+            });
+        },
+
+        copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!', 'success');
+            }).catch(() => {
+                showToast('Failed to copy', 'error');
+            });
+        },
+
+        resetPipeline() {
+            this.pipelineComplete = false;
+            this.pipelineError = false;
+            this.contentId = null;
+            this.logs = [];
+            this.totalCost = 0;
+            this.result = { script: '', imageUrl: '', imagePrompt: '', videoUrl: '', captions: {} };
+
+            // Reset stages
+            for (const key of this.stageOrder) {
+                this.stages[key] = { status: 'waiting', duration: null, cost: null };
+            }
+
+            // Mark skipped stages
+            if (this.inputType !== 'url') {
+                this.stages.scrape.status = 'skipped';
+            }
+            if (!this.includeVideo) {
+                this.stages.video.status = 'skipped';
+            }
+        },
+
+        // ── SSE Pipeline Stream ──────────────────────────
+
+        startGeneration() {
+            if (!this.input.trim() || this.generating) return;
+
+            this.generating = true;
+            this.pipelineVisible = true;
+            this.resetPipeline();
+
+            this.addLog('system', 'started', 'Starting up your content machine! Connecting to the server...');
+
+            fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    input_text: this.input.trim(),
+                    platform: this.platform,
+                    include_video: this.includeVideo
+                })
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Server returned ' + response.status);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                const read = () => {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            this.generating = false;
+                            if (!this.pipelineError) {
+                                this.pipelineComplete = true;
+                                this.addLog('system', 'complete', 'All done! Your content is ready. Check out the results below.');
+                                showToast('Content generated successfully!', 'success');
+                            }
+                            // Re-init lucide icons for any new elements
+                            this.$nextTick(() => {
+                                if (typeof lucide !== 'undefined') lucide.createIcons();
+                            });
+                            return;
+                        }
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop(); // Keep incomplete line in buffer
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const event = JSON.parse(line.slice(6));
+                                    this.handleSSE(event);
+                                } catch (e) {
+                                    // Skip malformed JSON
+                                }
+                            }
+                        }
+                        read();
+                    }).catch(err => {
+                        this.generating = false;
+                        this.pipelineError = true;
+                        this.addLog('system', 'error', 'Lost connection to the server: ' + err.message + '. Try refreshing the page.');
+                        showToast('Connection error', 'error');
+                    });
+                };
+                read();
+
+            }).catch(err => {
+                this.generating = false;
+                this.pipelineError = true;
+                this.addLog('system', 'error', 'Could not reach the server: ' + err.message + '. Make sure the app is running.');
+                showToast('Failed to start generation', 'error');
+            });
+        },
+
+        handleSSE(event) {
+            const { stage, status, message, detail, timestamp } = event;
+
+            // Add log entry
+            if (message) {
+                this.addLog(stage || 'system', status, message);
+            }
+
+            // Update content ID
+            if (event.content_id) {
+                this.contentId = event.content_id;
+            }
+
+            // Update stage status
+            if (stage && this.stages[stage]) {
+                switch(status) {
+                    case 'started':
+                        this.stages[stage].status = 'active';
+                        break;
+                    case 'progress':
+                    case 'polling':
+                        this.stages[stage].status = 'active';
+                        break;
+                    case 'complete':
+                        this.stages[stage].status = 'completed';
+                        if (detail?.duration) this.stages[stage].duration = detail.duration;
+                        if (detail?.cost) {
+                            this.stages[stage].cost = detail.cost;
+                            this.totalCost += detail.cost;
+                        }
+                        break;
+                    case 'error':
+                        this.stages[stage].status = 'error';
+                        this.pipelineError = true;
+                        break;
+                    case 'skipped':
+                        this.stages[stage].status = 'skipped';
+                        break;
+                }
+            }
+
+            // Update results
+            if (event.result) {
+                if (event.result.script) this.result.script = event.result.script;
+                if (event.result.image_url) this.result.imageUrl = event.result.image_url;
+                if (event.result.image_prompt) this.result.imagePrompt = event.result.image_prompt;
+                if (event.result.video_url) this.result.videoUrl = event.result.video_url;
+                if (event.result.captions) this.result.captions = event.result.captions;
+            }
+
+            // Pipeline-level events
+            if (status === 'pipeline_complete') {
+                this.pipelineComplete = true;
+                if (detail?.total_cost) this.totalCost = detail.total_cost;
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

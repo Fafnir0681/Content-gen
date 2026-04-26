@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Content Engine{% endblock %}
+
+{% block content %}
+<div x-data="dashboardApp()">
+
+    <!-- Page Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold" style="color: var(--text-primary);">Content Library</h1>
+            <p class="text-sm mt-1" style="color: var(--text-subtle);">Manage your automated content pipeline</p>
+        </div>
+        <a href="/create" class="btn btn-primary">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Create New
+        </a>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i data-lucide="layers" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ items|length }}</div>
+                <div class="stat-label">Total Items</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i data-lucide="loader" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ items|selectattr('status', 'in', ['processing', 'scraping', 'scripting', 'imaging', 'videoing'])|list|length }}</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ items|selectattr('status', 'equalto', 'ready')|list|length }}</div>
+                <div class="stat-label">Ready to Post</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i data-lucide="send" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ items|selectattr('status', 'equalto', 'published')|list|length }}</div>
+                <div class="stat-label">Published</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+        <div class="filter-tabs">
+            <button class="filter-tab" :class="{ 'active': filter === 'all' }" @click="filter = 'all'">All</button>
+            <button class="filter-tab" :class="{ 'active': filter === 'draft' }" @click="filter = 'draft'">Draft</button>
+            <button class="filter-tab" :class="{ 'active': filter === 'processing' }" @click="filter = 'processing'">Processing</button>
+            <button class="filter-tab" :class="{ 'active': filter === 'ready' }" @click="filter = 'ready'">Ready</button>
+            <button class="filter-tab" :class="{ 'active': filter === 'published' }" @click="filter = 'published'">Published</button>
+        </div>
+    </div>
+
+    <!-- Content Grid -->
+    {% if items|length > 0 %}
+    <div class="content-grid">
+        {% for item in items %}
+        <a href="/content/{{ item.id }}"
+           class="content-card"
+           x-show="filterMatch('{{ item.status }}')"
+           x-transition>
+            <!-- Thumbnail -->
+            <div class="content-card-thumb">
+                {% if item.image_url %}
+                <img src="{{ item.image_url }}" alt="Content thumbnail" loading="lazy">
+                {% else %}
+                <div class="content-card-thumb-placeholder">
+                    <i data-lucide="image" class="w-8 h-8"></i>
+                </div>
+                {% endif %}
+            </div>
+            <!-- Body -->
+            <div class="content-card-body">
+                <div class="content-card-title">
+                    {{ item.article_title or item.input_text[:50] }}{% if item.input_text|length > 50 and not item.article_title %}...{% endif %}
+                </div>
+                <div class="content-card-meta">
+                    <div class="flex items-center gap-2">
+                        <!-- Platform Badge -->
+                        <span class="badge badge-{{ item.platform or 'instagram' }}">
+                            {{ (item.platform or 'instagram')|capitalize }}
+                        </span>
+                        <!-- Status Badge -->
+                        {% if item.status in ['processing', 'scraping', 'scripting', 'imaging', 'videoing'] %}
+                        <span class="badge badge-processing">Processing</span>
+                        {% elif item.status == 'ready' or item.status == 'complete' %}
+                        <span class="badge badge-ready">Ready</span>
+                        {% elif item.status == 'published' %}
+                        <span class="badge badge-published">Published</span>
+                        {% elif item.status == 'error' %}
+                        <span class="badge badge-error">Error</span>
+                        {% elif item.status == 'scheduled' %}
+                        <span class="badge badge-scheduled">Scheduled</span>
+                        {% else %}
+                        <span class="badge badge-draft">Draft</span>
+                        {% endif %}
+                    </div>
+                    <span class="content-card-date">
+                        {{ item.created_at[:10] if item.created_at else '' }}
+                    </span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i data-lucide="file-plus" class="w-12 h-12 mx-auto" style="color: var(--text-subtle); opacity: 0.4;"></i>
+        </div>
+        <div class="empty-state-title">No content yet</div>
+        <div class="empty-state-text">Create your first automated post to get started.</div>
+        <a href="/create" class="btn btn-primary">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Create Your First Post
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function dashboardApp() {
+    return {
+        filter: 'all',
+        filterMatch(status) {
+            if (this.filter === 'all') return true;
+            if (this.filter === 'processing') {
+                return ['processing', 'scraping', 'scripting', 'imaging', 'videoing'].includes(status);
+            }
+            if (this.filter === 'ready') {
+                return ['ready', 'complete'].includes(status);
+            }
+            return status === this.filter;
+        }
+    };
+}
+</script>
+{% endblock %}

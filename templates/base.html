@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Content Engine{% endblock %}</title>
+
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+
+    <!-- JS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    {% block head %}{% endblock %}
+</head>
+<body x-data="{ sidebarOpen: false }" class="antialiased">
+
+    {% if session.get('logged_in') %}
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <button class="hamburger-btn" @click="sidebarOpen = !sidebarOpen">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <span class="ml-3 font-bold text-sm" style="color: var(--gold);">Content Engine</span>
+    </div>
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay"
+         :class="{ 'show': sidebarOpen }"
+         @click="sidebarOpen = false"></div>
+
+    <div class="app-shell">
+        <!-- Sidebar -->
+        <aside class="sidebar" :class="{ 'open': sidebarOpen }">
+            <!-- Brand -->
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                </div>
+                <span class="sidebar-brand-text">Content Engine</span>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <a href="/"
+                   class="sidebar-link {% if current_page == 'dashboard' %}active{% endif %}"
+                   @click="sidebarOpen = false">
+                    <i data-lucide="home" class="sidebar-icon"></i>
+                    Dashboard
+                </a>
+                <a href="/create"
+                   class="sidebar-link {% if current_page == 'create' %}active{% endif %}"
+                   @click="sidebarOpen = false">
+                    <i data-lucide="plus-circle" class="sidebar-icon"></i>
+                    Create
+                </a>
+                <a href="/calendar"
+                   class="sidebar-link {% if current_page == 'calendar' %}active{% endif %}"
+                   @click="sidebarOpen = false">
+                    <i data-lucide="calendar" class="sidebar-icon"></i>
+                    Calendar
+                </a>
+                <a href="/settings"
+                   class="sidebar-link {% if current_page == 'settings' %}active{% endif %}"
+                   @click="sidebarOpen = false">
+                    <i data-lucide="settings" class="sidebar-icon"></i>
+                    Settings
+                </a>
+            </nav>
+
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                <a href="/logout" class="sidebar-link">
+                    <i data-lucide="log-out" class="sidebar-icon"></i>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" x-data="toastManager()" @toast.window="addToast($event.detail)">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div class="toast"
+                 :class="[toast.type, toast.exiting ? 'toast-exit' : '']"
+                 x-show="true"
+                 x-transition>
+                <template x-if="toast.type === 'success'">
+                    <i data-lucide="check-circle" class="w-4 h-4" style="color: var(--success);"></i>
+                </template>
+                <template x-if="toast.type === 'error'">
+                    <i data-lucide="alert-circle" class="w-4 h-4" style="color: var(--danger);"></i>
+                </template>
+                <template x-if="toast.type === 'warning'">
+                    <i data-lucide="alert-triangle" class="w-4 h-4" style="color: var(--warning);"></i>
+                </template>
+                <span x-text="toast.message"></span>
+            </div>
+        </template>
+    </div>
+
+    {% else %}
+    <!-- Not logged in — show login redirect content -->
+    {% block unauthenticated %}
+        <script>window.location.href = '/login';</script>
+    {% endblock %}
+    {% endif %}
+
+    <!-- Toast Manager -->
+    <script>
+    function toastManager() {
+        return {
+            toasts: [],
+            addToast(detail) {
+                const toast = {
+                    id: Date.now(),
+                    message: detail.message || 'Something happened',
+                    type: detail.type || 'success',
+                    exiting: false
+                };
+                this.toasts.push(toast);
+                setTimeout(() => {
+                    toast.exiting = true;
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== toast.id);
+                    }, 300);
+                }, 4000);
+            }
+        };
+    }
+
+    // Helper to dispatch toast from anywhere
+    function showToast(message, type = 'success') {
+        window.dispatchEvent(new CustomEvent('toast', {
+            detail: { message, type }
+        }));
+    }
+    </script>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+    // Re-init after Alpine renders
+    document.addEventListener('alpine:initialized', () => {
+        setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 100);
+    });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

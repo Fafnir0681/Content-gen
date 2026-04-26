@@ -1,0 +1,6 @@
+flask>=3.0
+gunicorn>=21.0
+openai>=1.0
+firecrawl-py>=1.0,<2.0
+requests>=2.31
+python-dotenv>=1.0

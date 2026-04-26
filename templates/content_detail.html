@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+{% block title %}{{ item.article_title or 'Content Detail' }} — Content Engine{% endblock %}
+
+{% block content %}
+<div x-data="detailApp()">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="/">Dashboard</a>
+        <span class="breadcrumb-sep">/</span>
+        <a href="/">Content</a>
+        <span class="breadcrumb-sep">/</span>
+        <span style="color: var(--text-primary);">{{ item.article_title or item.input_text[:40] }}{% if not item.article_title and item.input_text|length > 40 %}...{% endif %}</span>
+    </div>
+
+    <!-- Page Header -->
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+        <div>
+            <h1 class="text-xl font-bold" style="color: var(--text-primary);">
+                {{ item.article_title or item.input_text[:60] }}{% if not item.article_title and item.input_text|length > 60 %}...{% endif %}
+            </h1>
+            <div class="flex items-center gap-3 mt-2">
+                <span class="badge badge-{{ item.platform or 'instagram' }}">
+                    {{ (item.platform or 'instagram')|capitalize }}
+                </span>
+                {% if item.status in ['processing', 'scraping', 'scripting', 'imaging', 'videoing'] %}
+                <span class="badge badge-processing">Processing</span>
+                {% elif item.status == 'ready' or item.status == 'complete' %}
+                <span class="badge badge-ready">Ready</span>
+                {% elif item.status == 'published' %}
+                <span class="badge badge-published">Published</span>
+                {% elif item.status == 'error' %}
+                <span class="badge badge-error">Error</span>
+                {% elif item.status == 'scheduled' %}
+                <span class="badge badge-scheduled">Scheduled</span>
+                {% else %}
+                <span class="badge badge-draft">Draft</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm" @click="showScheduleModal = true">
+                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                Schedule
+            </button>
+            <button class="btn btn-outline btn-sm" @click="publishNow()">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                Publish Now
+            </button>
+            <button class="btn btn-danger btn-sm" @click="confirmDelete = true">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Two-Column Layout -->
+    <div class="detail-layout">
+
+        <!-- LEFT: Content Preview -->
+        <div>
+            <!-- Script -->
+            {% if item.script %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="card-title flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4" style="color: var(--stage-script);"></i>
+                        Script
+                    </div>
+                    <button class="btn btn-ghost btn-sm" @click="copyText(script)">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        Copy
+                    </button>
+                </div>
+                <textarea class="input" rows="6" x-model="script" style="font-size: 13px;"></textarea>
+            </div>
+            {% endif %}
+
+            <!-- Image -->
+            {% if item.image_url %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="card-title flex items-center gap-2">
+                        <i data-lucide="image" class="w-4 h-4" style="color: var(--stage-image);"></i>
+                        Generated Image
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-outline btn-sm">
+                            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                            Regenerate
+                        </button>
+                        <a href="{{ item.image_url }}" download class="btn btn-ghost btn-sm">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                </div>
+                {% if item.image_prompt %}
+                <p class="text-xs mb-3" style="color: var(--text-subtle);">
+                    Prompt: {{ item.image_prompt }}
+                </p>
+                {% endif %}
+                <img src="{{ item.image_url }}" alt="Generated image" class="result-image-preview">
+            </div>
+            {% endif %}
+
+            <!-- Video -->
+            {% if item.video_url %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="card-title flex items-center gap-2">
+                        <i data-lucide="film" class="w-4 h-4" style="color: var(--stage-video);"></i>
+                        Generated Video
+                    </div>
+                    <a href="{{ item.video_url }}" download class="btn btn-ghost btn-sm">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        Download
+                    </a>
+                </div>
+                <video src="{{ item.video_url }}" controls class="result-video-player" style="max-height: 400px;"></video>
+            </div>
+            {% endif %}
+
+            <!-- Captions -->
+            {% if item.captions %}
+            <div class="card mb-4" x-data="{ captionTab: '{{ item.platform or 'instagram' }}' }">
+                <div class="card-header">
+                    <div class="card-title flex items-center gap-2">
+                        <i data-lucide="message-square" class="w-4 h-4" style="color: var(--stage-caption);"></i>
+                        Platform Captions
+                    </div>
+                </div>
+                <div class="tabs">
+                    {% for pname, caption in (item.captions_parsed or {}).items() %}
+                    <button class="tab"
+                            :class="{ 'active': captionTab === '{{ pname }}' }"
+                            @click="captionTab = '{{ pname }}'">
+                        {{ pname|capitalize }}
+                    </button>
+                    {% endfor %}
+                </div>
+                {% for pname, caption in (item.captions_parsed or {}).items() %}
+                <div x-show="captionTab === '{{ pname }}'">
+                    <div class="flex items-start justify-between gap-4">
+                        <p class="text-sm" style="color: var(--text-muted); white-space: pre-wrap; flex: 1;">{{ caption }}</p>
+                        <button class="btn btn-ghost btn-sm flex-shrink-0" @click="copyText(`{{ caption|e }}`)">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- RIGHT: Pipeline History + Metadata -->
+        <div>
+            <!-- Mini Pipeline Progress -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="card-title flex items-center gap-2">
+                        <i data-lucide="activity" class="w-4 h-4" style="color: var(--gold);"></i>
+                        Pipeline Status
+                    </div>
+                </div>
+                <div class="pipeline-bar" style="padding: 16px 8px; justify-content: flex-start;">
+                    {% set stage_names = ['scrape', 'script', 'image', 'video', 'caption'] %}
+                    {% for stage_name in stage_names %}
+                    {% if not loop.first %}
+                    <div class="pipeline-connector" style="width: 24px;"
+                         {% if stage_name in completed_stages %}class="completed"{% endif %}></div>
+                    {% endif %}
+                    <div class="pipeline-stage {% if stage_name in completed_stages %}completed{% elif stage_name in error_stages %}error{% elif stage_name in skipped_stages %}skipped{% elif stage_name == active_stage %}active{% else %}waiting{% endif %}">
+                        <div class="pipeline-node" style="width: 32px; height: 32px;">
+                            {% if stage_name in completed_stages %}
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            {% elif stage_name in error_stages %}
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            {% elif stage_name in skipped_stages %}
+                            <span style="font-size: 10px;">&#8212;</span>
+                            {% else %}
+                            <span style="font-size: 11px; color: var(--text-subtle);">{{ loop.index }}</span>
+                            {% endif %}
+                        </div>
+                        <span class="pipeline-stage-label" style="font-size: 10px;">{{ stage_name|capitalize }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Pipeline Log History -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="card-title flex items-center gap-2">
+                        <i data-lucide="terminal" class="w-4 h-4" style="color: var(--gold);"></i>
+                        Pipeline Log
+                    </div>
+                    <span class="text-xs" style="color: var(--text-subtle);">{{ logs|length }} entries</span>
+                </div>
+                <div class="log-feed" style="max-height: 420px;">
+                    {% if logs %}
+                    {% for log in logs %}
+                    <div class="log-entry" data-stage="{{ log.stage }}">
+                        <span class="log-timestamp">{{ log.created_at[11:19] if log.created_at and log.created_at|length > 19 else '' }}</span>
+                        <span class="log-status-icon">
+                            {% if log.status == 'complete' %}
+                            <span style="color: var(--success);">&#10003;</span>
+                            {% elif log.status == 'error' %}
+                            <span style="color: var(--danger);">&#10007;</span>
+                            {% elif log.status == 'polling' %}
+                            <span style="color: var(--warning);">&#9203;</span>
+                            {% elif log.status == 'started' %}
+                            <span style="color: var(--gold);">&#9654;</span>
+                            {% else %}
+                            <span style="color: var(--warning);">&#8635;</span>
+                            {% endif %}
+                        </span>
+                        <span class="stage-tag">{{ log.stage }}</span>
+                        <span class="log-message">{{ log.message }}</span>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-8" style="color: var(--text-subtle); font-size: 13px;">
+                        No pipeline logs yet
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Cost Breakdown -->
+            {% if item.cost_total %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="card-title flex items-center gap-2">
+                        <i data-lucide="receipt" class="w-4 h-4" style="color: var(--gold);"></i>
+                        Cost Breakdown
+                    </div>
+                </div>
+                <div class="space-y-2 text-sm" style="font-family: 'SF Mono', 'Consolas', monospace;">
+                    <div class="flex justify-between" style="color: var(--text-muted);">
+                        <span>Total</span>
+                        <span style="color: var(--gold); font-weight: 700;">${{ "%.4f"|format(item.cost_total) }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Metadata -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title flex items-center gap-2">
+                        <i data-lucide="info" class="w-4 h-4" style="color: var(--gold);"></i>
+                        Details
+                    </div>
+                </div>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span style="color: var(--text-subtle);">Input Type</span>
+                        <span style="color: var(--text-muted);">{{ (item.input_type or 'idea')|capitalize }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span style="color: var(--text-subtle);">Platform</span>
+                        <span style="color: var(--text-muted);">{{ (item.platform or 'instagram')|capitalize }}</span>
+                    </div>
+                    {% if item.word_count %}
+                    <div class="flex justify-between">
+                        <span style="color: var(--text-subtle);">Article Words</span>
+                        <span style="color: var(--text-muted);">{{ item.word_count }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between">
+                        <span style="color: var(--text-subtle);">Created</span>
+                        <span style="color: var(--text-muted);">{{ item.created_at[:16] if item.created_at else 'N/A' }}</span>
+                    </div>
+                    {% if item.updated_at %}
+                    <div class="flex justify-between">
+                        <span style="color: var(--text-subtle);">Updated</span>
+                        <span style="color: var(--text-muted);">{{ item.updated_at[:16] }}</span>
+                    </div>
+                    {% endif %}
+                    {% if item.include_video %}
+                    <div class="flex justify-between">
+                        <span style="color: var(--text-subtle);">Video</span>
+                        <span style="color: var(--success);">Included</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div x-show="confirmDelete" class="modal-overlay" x-transition.opacity @click.self="confirmDelete = false">
+        <div class="modal" @click.stop>
+            <div class="modal-title">Delete Content</div>
+            <p class="text-sm" style="color: var(--text-muted);">
+                Are you sure you want to delete this content item? This action cannot be undone.
+            </p>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" @click="confirmDelete = false">Cancel</button>
+                <button class="btn btn-danger" @click="deleteItem()">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div x-show="showScheduleModal" class="modal-overlay" x-transition.opacity @click.self="showScheduleModal = false">
+        <div class="modal" @click.stop>
+            <div class="modal-title">Schedule Post</div>
+            <div class="mb-4">
+                <label class="input-label">Date & Time</label>
+                <input type="datetime-local" class="input" x-model="scheduleDate">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" @click="showScheduleModal = false">Cancel</button>
+                <button class="btn btn-primary" @click="schedulePost()">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                    Schedule
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function detailApp() {
+    return {
+        script: {{ item.script|tojson if item.script else '""' }},
+        confirmDelete: false,
+        showScheduleModal: false,
+        scheduleDate: '',
+
+        copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!', 'success');
+            });
+        },
+
+        deleteItem() {
+            fetch('/api/content/{{ item.id }}', { method: 'DELETE' })
+                .then(r => r.json())
+                .then(data => {
+                    showToast('Content deleted', 'success');
+                    window.location.href = '/';
+                })
+                .catch(() => showToast('Failed to delete', 'error'));
+        },
+
+        publishNow() {
+            showToast('Publishing... (connect GetLate.dev in Settings)', 'warning');
+        },
+
+        schedulePost() {
+            if (!this.scheduleDate) {
+                showToast('Pick a date and time', 'warning');
+                return;
+            }
+            showToast('Scheduled for ' + this.scheduleDate, 'success');
+            this.showScheduleModal = false;
+        }
+    };
+}
+</script>
+{% endblock %}
