@@ -324,12 +324,12 @@ def stage_caption(content_id, item, emit_event):
     stage = "caption"
     start = time.time()
 
-    emit_event(stage, "started", f"Last step! Each social platform has different rules (character limits, hashtag styles, tone). We're asking AI to write custom captions for {', '.join(platforms)} so each one fits perfectly.")
-    add_pipeline_log(content_id, stage, "started", "Calling OpenRouter for captions")
-
     # Generate captions for the target platform + a few extras
     target = item.get("platform", "instagram")
     platforms = list(set([target, "instagram", "tiktok", "linkedin"]))
+
+    emit_event(stage, "started", f"Last step! Each social platform has different rules (character limits, hashtag styles, tone). We're asking AI to write custom captions for {', '.join(platforms)} so each one fits perfectly.")
+    add_pipeline_log(content_id, stage, "started", "Calling OpenRouter for captions")
 
     result = generate_captions(
         item.get("script", ""),
