@@ -7,15 +7,17 @@ Students learn: this is the "output" stage — where content goes live.
 API base: https://zernio.com/api/v1
 Auth: Authorization: Bearer <key>
 Posts endpoint: POST /posts
-  - content: post text
-  - platforms: [{"platform": "instagram", "accountId": "<id>"}]
+  Confirmed field names (from OpenAPI spec):
+  - text: post text/caption (NOT "content")
+  - profileId: Zernio profile ID string (top-level, NOT inside platforms)
+  - socialAccountIds: flat array of account _id strings (NOT platforms objects)
   - publishNow: true  (for immediate publish)
-  - scheduledFor: ISO datetime string  (for scheduled publish)
-  - media: [{"url": "...", "type": "image"}]
+  - scheduledAt: ISO datetime string (NOT "scheduledFor")
+  - mediaItems: [{"url": "...", "type": "image|video"}] (NOT "media")
 
 Profiles in Zernio are organizational containers. Publishing targets
 individual account IDs. We resolve a profile's accounts by calling
-GET /accounts and filtering by the profile_id field on each account.
+GET /accounts and filtering by the profileId field on each account.
 """
 
 import os
@@ -158,42 +160,49 @@ def publish_post(content_item, platforms=None, profile_id=None, emit_event=None)
     else:
         accounts = []
 
-    # Build platforms array — prefer resolved accountId, fall back to platform-only
-    platforms_payload = []
+    # Build socialAccountIds — flat array of account _id strings,
+    # filtered to the platforms we want to post to.
+    # If no accounts resolved for a platform, skip it rather than guessing.
+    social_account_ids = []
     for p in platforms:
         account_match = next(
             (a for a in accounts if a.get("platform", "").lower() == p.lower()),
             None
         )
         if account_match and account_match.get("_id"):
-            platforms_payload.append({
-                "platform": p,
-                "accountId": account_match["_id"]
-            })
+            social_account_ids.append(account_match["_id"])
         else:
-            platforms_payload.append({"platform": p})
+            emit("publish", "progress",
+                 f"No resolved account ID for platform '{p}' — skipping")
+
+    if not social_account_ids:
+        emit("publish", "error",
+             "No valid account IDs resolved. Check your Brand Profile in Settings "
+             "and ensure the profile has connected accounts on the target platform.")
+        raise Exception("No valid socialAccountIds — publish aborted")
 
     try:
-        # Build the post payload
+        # Build the post payload using confirmed Zernio field names
         payload = {
-            "content": content_item.get("script", ""),
-            "platforms": platforms_payload,
-            "publishNow": True,
+            "text": content_item.get("script", ""),          # NOT "content"
+            "profileId": profile_id,                          # top-level profile ID
+            "socialAccountIds": social_account_ids,           # flat array of _id strings
+            "publishNow": True,                               # immediate publish
         }
 
-        # Attach image if available
+        # Attach media using confirmed field name "mediaItems" (NOT "media")
+        media_items = []
         if content_item.get("image_url"):
-            payload["media"] = [{"url": content_item["image_url"], "type": "image"}]
-
-        # Attach video if available (video takes precedence over image)
+            media_items.append({"url": content_item["image_url"], "type": "image"})
         if content_item.get("video_url"):
-            payload["media"] = payload.get("media", [])
-            payload["media"].append({"url": content_item["video_url"], "type": "video"})
+            media_items.append({"url": content_item["video_url"], "type": "video"})
+        if media_items:
+            payload["mediaItems"] = media_items
 
-        # If there's a scheduled time, use scheduledFor instead of publishNow
+        # If scheduled, use "scheduledAt" (NOT "scheduledFor") and drop publishNow
         if content_item.get("scheduled_at"):
             payload.pop("publishNow", None)
-            payload["scheduledFor"] = content_item["scheduled_at"]
+            payload["scheduledAt"] = content_item["scheduled_at"]
             payload["timezone"] = "America/Los_Angeles"
 
         response = requests.post(
@@ -205,7 +214,9 @@ def publish_post(content_item, platforms=None, profile_id=None, emit_event=None)
         response.raise_for_status()
         data = response.json()
 
-        post_id = data.get("id", data.get("post_id", "unknown"))
+        # Zernio returns {"post": {"_id": "...", ...}}
+        post = data.get("post", data)
+        post_id = post.get("_id", post.get("id", "unknown"))
 
         emit("publish", "progress", f"Published! Post ID: {post_id}")
 
