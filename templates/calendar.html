@@ -119,6 +119,18 @@
             </div>
 
             <div class="mb-4">
+                <label class="input-label">Brand Profile</label>
+                <select class="input" x-model="newSlot.profileId">
+                    {% for p in profiles|default([]) %}
+                    <option value="{{ p.profile_id }}">{{ p.label }}</option>
+                    {% endfor %}
+                    {% if not profiles %}
+                    <option value="">No profiles — add one in Settings</option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <div class="mb-4">
                 <label class="input-label">Date & Time</label>
                 <input type="datetime-local" class="input" x-model="newSlot.datetime">
             </div>
@@ -164,7 +176,8 @@ function calendarApp() {
         newSlot: {
             contentId: '',
             datetime: '',
-            platform: 'instagram'
+            platform: 'instagram',
+            profileId: '{{ profiles[0].profile_id if profiles else "" }}'
         },
 
         // Parse slots from server
@@ -256,8 +269,29 @@ function calendarApp() {
                 showToast('Please fill all fields', 'warning');
                 return;
             }
-            showToast('Content scheduled for ' + this.newSlot.datetime, 'success');
-            this.showScheduleModal = false;
+
+            fetch('/api/schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content_id: parseInt(this.newSlot.contentId),
+                    datetime: this.newSlot.datetime,
+                    platform: this.newSlot.platform,
+                    profile_id: this.newSlot.profileId
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Scheduled for ' + this.newSlot.datetime, 'success');
+                    this.showScheduleModal = false;
+                    // Reload the page to refresh the calendar with the new slot
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showToast(data.error || 'Failed to schedule', 'error');
+                }
+            })
+            .catch(() => showToast('Failed to schedule content', 'error'));
         }
     };
 }

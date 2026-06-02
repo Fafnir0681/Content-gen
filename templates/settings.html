@@ -141,8 +141,21 @@
             <button class="btn btn-outline btn-sm"
                     @click="testConnection('firecrawl')"
                     :disabled="!services.firecrawl.key || services.firecrawl.testing">
-                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
-                Test Connection
+                <template x-if="!services.firecrawl.testing">
+                    <span class="flex items-center gap-1">
+                        <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                        Test Connection
+                    </span>
+                </template>
+                <template x-if="services.firecrawl.testing">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        Testing...
+                    </span>
+                </template>
             </button>
         </div>
     </div>
@@ -206,22 +219,35 @@
             <button class="btn btn-outline btn-sm"
                     @click="testConnection('kie')"
                     :disabled="!services.kie.key || services.kie.testing">
-                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
-                Test Connection
+                <template x-if="!services.kie.testing">
+                    <span class="flex items-center gap-1">
+                        <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                        Test Connection
+                    </span>
+                </template>
+                <template x-if="services.kie.testing">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        Testing...
+                    </span>
+                </template>
             </button>
         </div>
     </div>
 
-    <!-- GetLate.dev -->
+    <!-- Zernio -->
     <div class="service-card">
         <div class="service-header">
             <div class="service-name">
                 <span style="font-size: 20px;">&#128640;</span>
-                GetLate.dev
+                Zernio
             </div>
             <div class="service-status"
-                 :class="services.getlate.connected ? 'connected' : 'disconnected'">
-                <template x-if="services.getlate.connected">
+                 :class="services.zernio.connected ? 'connected' : 'disconnected'">
+                <template x-if="services.zernio.connected">
                     <span class="flex items-center gap-1">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
@@ -229,7 +255,7 @@
                         Connected
                     </span>
                 </template>
-                <template x-if="!services.getlate.connected">
+                <template x-if="!services.zernio.connected">
                     <span class="flex items-center gap-1">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
@@ -239,52 +265,150 @@
                 </template>
             </div>
         </div>
-        <p class="service-desc">Multi-platform social media publishing. Connect your Instagram, TikTok, LinkedIn, and more.</p>
+        <p class="service-desc">Multi-platform social media publishing. Connect your Instagram, TikTok, LinkedIn, and more via zernio.com.</p>
 
         <div class="mb-4">
             <label class="input-label">API Key</label>
             <div class="input-group">
-                <input :type="services.getlate.showKey ? 'text' : 'password'"
+                <input :type="services.zernio.showKey ? 'text' : 'password'"
                        class="input" style="padding-right: 42px;"
-                       x-model="services.getlate.key"
-                       placeholder="Your GetLate.dev API key">
-                <button class="input-toggle" @click="services.getlate.showKey = !services.getlate.showKey">
-                    <i x-show="!services.getlate.showKey" data-lucide="eye" class="w-4 h-4"></i>
-                    <i x-show="services.getlate.showKey" data-lucide="eye-off" class="w-4 h-4"></i>
+                       x-model="services.zernio.key"
+                       placeholder="Your Zernio API key (sk_...)">
+                <button class="input-toggle" @click="services.zernio.showKey = !services.zernio.showKey">
+                    <i x-show="!services.zernio.showKey" data-lucide="eye" class="w-4 h-4"></i>
+                    <i x-show="services.zernio.showKey" data-lucide="eye-off" class="w-4 h-4"></i>
                 </button>
             </div>
         </div>
 
         <!-- Connected Accounts -->
-        <div x-show="services.getlate.connected" class="mb-4">
+        <div x-show="services.zernio.connected" class="mb-4">
             <label class="input-label">Connected Accounts</label>
             <div class="space-y-2">
-                <template x-for="acct in services.getlate.accounts" :key="acct.id">
+                <template x-for="acct in services.zernio.accounts" :key="acct._id || acct.id">
                     <div class="flex items-center justify-between p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border);">
                         <div class="flex items-center gap-2">
                             <span class="badge" :class="'badge-' + acct.platform" x-text="acct.platform"></span>
-                            <span class="text-sm" style="color: var(--text-muted);" x-text="acct.name"></span>
+                            <span class="text-sm" style="color: var(--text-muted);" x-text="acct.username || acct.name || acct._id"></span>
                         </div>
                         <span class="text-xs" style="color: var(--success);">Active</span>
                     </div>
                 </template>
             </div>
-            <p x-show="services.getlate.accounts.length === 0" class="text-xs mt-2" style="color: var(--text-subtle);">
-                No accounts connected yet. Connect accounts in your GetLate.dev dashboard.
+            <p x-show="services.zernio.accounts.length === 0" class="text-xs mt-2" style="color: var(--text-subtle);">
+                No accounts loaded yet. Click Test Connection to load accounts from Zernio.
             </p>
         </div>
 
         <div class="flex gap-2">
-            <button class="btn btn-primary btn-sm" @click="saveService('getlate')">
+            <button class="btn btn-primary btn-sm" @click="saveService('zernio')">
                 <i data-lucide="save" class="w-3.5 h-3.5"></i>
                 Save
             </button>
             <button class="btn btn-outline btn-sm"
-                    @click="testConnection('getlate')"
-                    :disabled="!services.getlate.key || services.getlate.testing">
-                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
-                Test Connection
+                    @click="testConnection('zernio')"
+                    :disabled="!services.zernio.key || services.zernio.testing">
+                <template x-if="!services.zernio.testing">
+                    <span class="flex items-center gap-1">
+                        <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                        Test Connection
+                    </span>
+                </template>
+                <template x-if="services.zernio.testing">
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        Testing...
+                    </span>
+                </template>
             </button>
+        </div>
+    </div>
+
+    <!-- Profile Manager -->
+    <div class="service-card" x-data="profileManager()">
+        <div class="service-header">
+            <div class="service-name">
+                <span style="font-size: 20px;">&#127991;</span>
+                Brand Profiles
+            </div>
+            <button class="btn btn-outline btn-sm" @click="showAddForm = !showAddForm">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                Add Profile
+            </button>
+        </div>
+        <p class="service-desc">Saved Zernio profiles for targeting specific brand accounts when publishing.</p>
+
+        <!-- Add Profile Form (inline, toggleable) -->
+        <div x-show="showAddForm" x-transition class="mb-4 p-4 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border);">
+            <div class="mb-3">
+                <label class="input-label">Label</label>
+                <input type="text" class="input" x-model="newLabel" placeholder="e.g. Ironside">
+            </div>
+            <div class="mb-3">
+                <label class="input-label">Zernio Profile ID</label>
+                <input type="text" class="input" x-model="newProfileId" placeholder="e.g. 6a1cff243917c8c2b74a2f26">
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-primary btn-sm" @click="addProfile()">
+                    <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                    Save Profile
+                </button>
+                <button class="btn btn-ghost btn-sm" @click="showAddForm = false; newLabel = ''; newProfileId = '';">
+                    Cancel
+                </button>
+            </div>
+        </div>
+
+        <!-- Profile List -->
+        <div class="space-y-2">
+            <template x-if="profiles.length === 0">
+                <p class="text-sm" style="color: var(--text-subtle);">No profiles saved yet.</p>
+            </template>
+            <template x-for="p in profiles" :key="p.id">
+                <div class="p-3 rounded-lg" style="background: var(--bg-tertiary); border: 1px solid var(--border);">
+                    <!-- View mode -->
+                    <template x-if="editingId !== p.id">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-sm font-semibold" style="color: var(--text-primary);" x-text="p.label"></div>
+                                <div class="text-xs mt-0.5" style="color: var(--text-subtle); font-family: monospace;" x-text="p.profile_id"></div>
+                            </div>
+                            <div class="flex gap-2 flex-shrink-0">
+                                <button class="btn btn-ghost btn-sm" @click="startEdit(p)">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                    Edit
+                                </button>
+                                <button class="btn btn-danger btn-sm" @click="deleteProfile(p.id)">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                    <!-- Edit mode -->
+                    <template x-if="editingId === p.id">
+                        <div>
+                            <div class="mb-2">
+                                <label class="input-label">Label</label>
+                                <input type="text" class="input" x-model="editLabel">
+                            </div>
+                            <div class="mb-3">
+                                <label class="input-label">Zernio Profile ID</label>
+                                <input type="text" class="input" x-model="editProfileId">
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="btn btn-primary btn-sm" @click="saveEdit(p.id)">
+                                    <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                                    Save
+                                </button>
+                                <button class="btn btn-ghost btn-sm" @click="editingId = null">Cancel</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
         </div>
     </div>
 
@@ -316,7 +440,7 @@ function settingsApp() {
                 showKey: false,
                 testing: false
             },
-            getlate: {
+            zernio: {
                 key: {{ (settings.get('getlate_api_key', '') if settings else '')|tojson }},
                 connected: {{ 'true' if settings and settings.get('getlate_api_key') else 'false' }},
                 showKey: false,
@@ -341,7 +465,8 @@ function settingsApp() {
                     payload.kie_api_key = svc.key;
                     payload.kie_image_model = svc.imageModel;
                     break;
-                case 'getlate':
+                case 'zernio':
+                    // Stored under getlate_api_key for backward compatibility
                     payload.getlate_api_key = svc.key;
                     break;
             }
@@ -354,7 +479,8 @@ function settingsApp() {
             .then(r => r.json())
             .then(data => {
                 svc.connected = !!svc.key;
-                showToast(name.charAt(0).toUpperCase() + name.slice(1) + ' settings saved!', 'success');
+                const label = name.charAt(0).toUpperCase() + name.slice(1);
+                showToast(label + ' settings saved!', 'success');
             })
             .catch(() => showToast('Failed to save settings', 'error'));
         },
@@ -370,6 +496,17 @@ function settingsApp() {
                     if (data.success) {
                         svc.connected = true;
                         showToast(name + ' connection successful!', 'success');
+                        // If Zernio, load connected accounts into the UI
+                        if (name === 'zernio' && data.accounts !== undefined) {
+                            // Refresh page to reload accounts from Zernio
+                            fetch('/api/test-connection/zernio', { method: 'POST' })
+                                .then(r => r.json())
+                                .then(d => {
+                                    if (d.accounts_list) {
+                                        svc.accounts = d.accounts_list;
+                                    }
+                                });
+                        }
                     } else {
                         showToast('Connection failed: ' + (data.error || 'Unknown error'), 'error');
                     }
@@ -378,6 +515,92 @@ function settingsApp() {
                     svc.testing = false;
                     showToast('Connection test failed', 'error');
                 });
+        }
+    };
+}
+
+function profileManager() {
+    return {
+        profiles: {{ profiles|tojson if profiles else '[]' }},
+        showAddForm: false,
+        newLabel: '',
+        newProfileId: '',
+        editingId: null,
+        editLabel: '',
+        editProfileId: '',
+
+        addProfile() {
+            const label = this.newLabel.trim();
+            const profileId = this.newProfileId.trim();
+            if (!label || !profileId) {
+                showToast('Both Label and Profile ID are required', 'warning');
+                return;
+            }
+            fetch('/api/profiles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ label, profile_id: profileId })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.profiles.push(data.profile);
+                    this.newLabel = '';
+                    this.newProfileId = '';
+                    this.showAddForm = false;
+                    showToast('Profile saved!', 'success');
+                } else {
+                    showToast(data.error || 'Failed to save profile', 'error');
+                }
+            })
+            .catch(() => showToast('Failed to save profile', 'error'));
+        },
+
+        startEdit(profile) {
+            this.editingId = profile.id;
+            this.editLabel = profile.label;
+            this.editProfileId = profile.profile_id;
+        },
+
+        saveEdit(id) {
+            const label = this.editLabel.trim();
+            const profileId = this.editProfileId.trim();
+            if (!label || !profileId) {
+                showToast('Both Label and Profile ID are required', 'warning');
+                return;
+            }
+            fetch('/api/profiles/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ label, profile_id: profileId })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const idx = this.profiles.findIndex(p => p.id === id);
+                    if (idx !== -1) this.profiles[idx] = data.profile;
+                    this.editingId = null;
+                    showToast('Profile updated!', 'success');
+                } else {
+                    showToast(data.error || 'Failed to update profile', 'error');
+                }
+            })
+            .catch(() => showToast('Failed to update profile', 'error'));
+        },
+
+        deleteProfile(id) {
+            if (!confirm('Delete this profile?')) return;
+            fetch('/api/profiles/' + id, { method: 'DELETE' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.profiles = this.profiles.filter(p => p.id !== id);
+                    showToast('Profile deleted', 'success');
+                } else {
+                    showToast(data.error || 'Failed to delete', 'error');
+                }
+            })
+            .catch(() => showToast('Failed to delete profile', 'error'));
         }
     };
 }

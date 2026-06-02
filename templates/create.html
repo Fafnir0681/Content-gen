@@ -61,12 +61,25 @@
         </div>
 
         <!-- Video Toggle -->
-        <div class="mb-6">
+        <div class="mb-5">
             <label class="toggle-wrap" @click="!generating && (includeVideo = !includeVideo)">
                 <div class="toggle" :class="{ 'active': includeVideo }"></div>
                 <span class="toggle-label">Include Video Generation</span>
                 <span x-show="includeVideo" class="text-xs" style="color: var(--text-subtle); margin-left: 4px;">(~$0.19 extra)</span>
             </label>
+        </div>
+
+        <!-- Brand Profile -->
+        <div class="mb-6">
+            <label class="input-label">Brand Profile</label>
+            <select class="input" x-model="selectedProfileId" :disabled="generating">
+                {% for p in profiles|default([]) %}
+                <option value="{{ p.profile_id }}">{{ p.label }}</option>
+                {% endfor %}
+                {% if not profiles %}
+                <option value="">No profiles configured — add one in Settings</option>
+                {% endif %}
+            </select>
         </div>
 
         <!-- Generate Button -->
@@ -324,6 +337,7 @@ function createApp() {
         inputType: 'idea',
         platform: 'instagram',
         includeVideo: false,
+        selectedProfileId: '{{ profiles[0].profile_id if profiles else "" }}',
 
         // Pipeline State
         generating: false,
@@ -461,7 +475,8 @@ function createApp() {
                 body: JSON.stringify({
                     input_text: this.input.trim(),
                     platform: this.platform,
-                    include_video: this.includeVideo
+                    include_video: this.includeVideo,
+                    profile_id: this.selectedProfileId
                 })
             }).then(response => {
                 if (!response.ok) {

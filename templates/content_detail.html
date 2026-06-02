@@ -337,6 +337,8 @@ function detailApp() {
         confirmDelete: false,
         showScheduleModal: false,
         scheduleDate: '',
+        // Profile ID used when publishing — defaults to first saved profile
+        selectedProfileId: '',
 
         copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
@@ -355,7 +357,50 @@ function detailApp() {
         },
 
         publishNow() {
-            showToast('Publishing... (connect GetLate.dev in Settings)', 'warning');
+            // Get default profile from the page (first profile)
+            const profileId = this.selectedProfileId || '';
+
+            const source = new EventSource('/api/publish/{{ item.id }}');
+            showToast('Publishing...', 'success');
+
+            fetch('/api/publish/{{ item.id }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile_id: profileId })
+            }).then(response => {
+                if (!response.ok) {
+                    showToast('Publish request failed', 'error');
+                    return;
+                }
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                const read = () => {
+                    reader.read().then(({ done, value }) => {
+                        if (done) return;
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const event = JSON.parse(line.slice(6));
+                                    if (event.status === 'complete') {
+                                        showToast('Published successfully!', 'success');
+                                        setTimeout(() => window.location.reload(), 1000);
+                                    } else if (event.status === 'error') {
+                                        showToast('Publish failed: ' + event.message, 'error');
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+                        read();
+                    }).catch(() => showToast('Connection lost during publish', 'error'));
+                };
+                read();
+            }).catch(() => showToast('Failed to start publish', 'error'));
         },
 
         schedulePost() {
@@ -363,8 +408,26 @@ function detailApp() {
                 showToast('Pick a date and time', 'warning');
                 return;
             }
-            showToast('Scheduled for ' + this.scheduleDate, 'success');
-            this.showScheduleModal = false;
+            fetch('/api/schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content_id: {{ item.id }},
+                    datetime: this.scheduleDate,
+                    platform: '{{ item.platform or "instagram" }}',
+                    profile_id: this.selectedProfileId
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Scheduled for ' + this.scheduleDate, 'success');
+                    this.showScheduleModal = false;
+                } else {
+                    showToast(data.error || 'Failed to schedule', 'error');
+                }
+            })
+            .catch(() => showToast('Failed to schedule', 'error'));
         }
     };
 }

@@ -46,7 +46,7 @@ def get_db():
 # Called once on app startup
 # ---------------------------------------------------------------------------
 def init_db():
-    """Create all 4 tables. Safe to call multiple times (IF NOT EXISTS)."""
+    """Create all tables. Safe to call multiple times (IF NOT EXISTS)."""
     with get_db() as db:
         # -- content_items: stores each piece of content through the pipeline --
         db.execute("""
@@ -104,12 +104,41 @@ def init_db():
                 content_id INTEGER REFERENCES content_items(id) ON DELETE CASCADE,
                 scheduled_datetime TIMESTAMP NOT NULL,
                 platform TEXT NOT NULL,
+                profile_id TEXT,
                 status TEXT DEFAULT 'pending',
                 published_at TIMESTAMP,
                 error_message TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        # -- zernio_profiles: saved Zernio profile IDs for brand targeting --
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS zernio_profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                label TEXT NOT NULL,
+                profile_id TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # Migrate: add profile_id to existing schedule_slots tables that predate this column
+        try:
+            db.execute("ALTER TABLE schedule_slots ADD COLUMN profile_id TEXT")
+        except Exception:
+            pass  # Column already exists — safe to ignore
+
+        # Seed default profiles on first run
+        count = db.execute("SELECT COUNT(*) as c FROM zernio_profiles").fetchone()["c"]
+        if count == 0:
+            db.execute(
+                "INSERT INTO zernio_profiles (label, profile_id) VALUES (?, ?)",
+                ("Ironside", "6a1cff243917c8c2b74a2f26")
+            )
+            db.execute(
+                "INSERT INTO zernio_profiles (label, profile_id) VALUES (?, ?)",
+                ("AssemblR", "6a1d0d3387faa42d5a3fe4f1")
+            )
 
 
 # ===========================================================================
@@ -242,16 +271,76 @@ def set_setting(key, value):
 # SCHEDULE SLOTS — calendar entries for publishing
 # ===========================================================================
 
-def create_schedule_slot(content_id, scheduled_datetime, platform):
+def create_schedule_slot(content_id, scheduled_datetime, platform, profile_id=None):
     """Create a schedule slot for publishing. Returns the slot ID."""
     with get_db() as db:
         cursor = db.execute(
-            """INSERT INTO schedule_slots (content_id, scheduled_datetime, platform)
-               VALUES (?, ?, ?)""",
-            (content_id, scheduled_datetime, platform)
+            """INSERT INTO schedule_slots (content_id, scheduled_datetime, platform, profile_id)
+               VALUES (?, ?, ?, ?)""",
+            (content_id, scheduled_datetime, platform, profile_id)
         )
         return cursor.lastrowid
 
+
+def get_default_profile():
+    """Return the first profile, or None if no profiles exist."""
+    with get_db() as db:
+        row = db.execute(
+            "SELECT * FROM zernio_profiles ORDER BY id ASC LIMIT 1"
+        ).fetchone()
+        return dict(row) if row else None
+
+
+# ===========================================================================
+# ZERNIO PROFILES — saved brand profiles for publishing targeting
+# ===========================================================================
+
+def list_profiles():
+    """Return all Zernio profiles, ordered by creation (oldest first)."""
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT * FROM zernio_profiles ORDER BY id ASC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_profile(profile_db_id):
+    """Fetch a single profile by its database ID. Returns dict or None."""
+    with get_db() as db:
+        row = db.execute(
+            "SELECT * FROM zernio_profiles WHERE id = ?", (profile_db_id,)
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def create_profile(label, profile_id):
+    """Insert a new Zernio profile. Returns the new row ID."""
+    with get_db() as db:
+        cursor = db.execute(
+            "INSERT INTO zernio_profiles (label, profile_id) VALUES (?, ?)",
+            (label.strip(), profile_id.strip())
+        )
+        return cursor.lastrowid
+
+
+def update_profile(profile_db_id, label, profile_id):
+    """Update an existing profile's label and Zernio profile ID."""
+    with get_db() as db:
+        db.execute(
+            "UPDATE zernio_profiles SET label = ?, profile_id = ? WHERE id = ?",
+            (label.strip(), profile_id.strip(), profile_db_id)
+        )
+
+
+def delete_profile(profile_db_id):
+    """Delete a profile by its database ID."""
+    with get_db() as db:
+        db.execute("DELETE FROM zernio_profiles WHERE id = ?", (profile_db_id,))
+
+
+# ===========================================================================
+# SCHEDULE SLOTS — calendar entries for publishing
+# ===========================================================================
 
 def list_schedule_slots(month=None, year=None):
     """

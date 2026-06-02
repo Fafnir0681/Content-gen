@@ -10,7 +10,7 @@ Pipeline stages:
   3. image    — Kie.ai Nano Banana Pro generates image
   4. video    — Kie.ai Veo 3.1 generates video (optional)
   5. caption  — OpenRouter LLM generates platform-specific captions
-  6. publish  — GetLate.dev posts to social media (only when explicitly triggered)
+  6. publish  — Zernio posts to social media (only when explicitly triggered)
 
 Each stage:
   - Updates the content_item status in the database
@@ -364,11 +364,16 @@ def stage_caption(content_id, item, emit_event):
 # ---------------------------------------------------------------------------
 # STAGE 6: PUBLISH (triggered separately)
 # ---------------------------------------------------------------------------
-def stage_publish(content_id, emit_event):
+def stage_publish(content_id, emit_event, profile_id=None):
     """
-    Publish content via GetLate.dev.
+    Publish content via Zernio.
     This is NOT called by run_pipeline() — it's triggered separately
     via the /api/publish/<id> endpoint.
+
+    Args:
+        content_id: ID of the content item to publish
+        emit_event: SSE callback
+        profile_id: Zernio profile ID string for account targeting
     """
     stage = "publish"
     start = time.time()
@@ -379,12 +384,12 @@ def stage_publish(content_id, emit_event):
         return
 
     emit_event(stage, "started", "Publishing to social media...")
-    add_pipeline_log(content_id, stage, "started", "Calling GetLate.dev API")
+    add_pipeline_log(content_id, stage, "started", "Calling Zernio API")
 
     update_content_item(content_id, status="publishing")
 
     try:
-        result = publish_post(item, emit_event=emit_event)
+        result = publish_post(item, profile_id=profile_id, emit_event=emit_event)
 
         duration = round(time.time() - start, 1)
 

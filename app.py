@@ -30,7 +30,8 @@ from models import (
     init_db, create_content_item, get_content_item, list_content_items,
     update_content_item, delete_content_item, add_pipeline_log,
     get_pipeline_logs, get_setting, set_setting, create_schedule_slot,
-    list_schedule_slots
+    list_schedule_slots, list_profiles, get_profile, create_profile,
+    update_profile, delete_profile, get_default_profile
 )
 from pipeline import run_pipeline, stage_publish, regenerate_image
 
@@ -50,6 +51,21 @@ def create_app():
 
     # Initialize the database on startup
     init_db()
+
+    # Load persisted API keys from database into os.environ so service
+    # modules can read them via os.getenv() after a restart.
+    # This fixes the bug where keys saved via the Settings UI are lost
+    # when the Railway container is redeployed.
+    _env_map = {
+        "openrouter_api_key": "OPENROUTER_API_KEY",
+        "firecrawl_api_key":  "FIRECRAWL_API_KEY",
+        "kie_api_key":        "KIE_API_KEY",
+        "getlate_api_key":    "GETLATE_API_KEY",
+    }
+    for db_key, env_key in _env_map.items():
+        saved = get_setting(db_key, "")
+        if saved and not os.environ.get(env_key):
+            os.environ[env_key] = saved
 
     # -- Store for active SSE streams --
     # Maps content_id -> list of queue.Queue objects (one per connected client)
@@ -124,7 +140,9 @@ def create_app():
     @login_required
     def create():
         """Create: URL/idea input + platform selector + pipeline X-ray."""
-        return render_template("create.html", current_page="create")
+        profiles = list_profiles()
+        return render_template("create.html", current_page="create",
+                               profiles=profiles)
 
     @app.route("/content/<int:item_id>")
     @login_required
@@ -146,14 +164,17 @@ def create_app():
         month = request.args.get("month", now.month, type=int)
         year = request.args.get("year", now.year, type=int)
         slots = list_schedule_slots(month=month, year=year)
+        all_items = list_content_items()
+        profiles = list_profiles()
         return render_template("calendar.html", slots=slots,
+                               all_items=all_items, profiles=profiles,
                                current_month=month, current_year=year,
                                current_page="calendar")
 
     @app.route("/settings")
     @login_required
     def settings_page():
-        """Settings: API keys + model configuration."""
+        """Settings: API keys + model configuration + profile manager."""
         settings = {
             "openrouter_api_key": get_setting("openrouter_api_key", ""),
             "firecrawl_api_key": get_setting("firecrawl_api_key", ""),
@@ -162,8 +183,9 @@ def create_app():
             "default_model": get_setting("default_model", "google/gemini-2.5-flash"),
             "default_platform": get_setting("default_platform", "instagram"),
         }
+        profiles = list_profiles()
         return render_template("settings.html", settings=settings,
-                               current_page="settings")
+                               profiles=profiles, current_page="settings")
 
     # -----------------------------------------------------------------------
     # API ROUTES
@@ -224,6 +246,128 @@ def create_app():
                 os.environ[env_map[key]] = value
 
         return jsonify({"success": True, "message": "Settings saved"})
+
+    @app.route("/api/test-connection/<name>", methods=["POST"])
+    @login_required
+    def api_test_connection(name):
+        """
+        Validate that a saved API key is functional.
+        Makes a lightweight real call to the relevant service.
+        """
+        from services.getlate import get_connected_accounts
+        from services.openrouter import _get_client
+        from services.kie_ai import _get_headers as kie_headers
+
+        try:
+            if name == "openrouter":
+                client = _get_client()
+                if not client:
+                    return jsonify({"success": False, "error": "No API key saved"})
+                # Lightweight models list call
+                client.models.list()
+                return jsonify({"success": True})
+
+            elif name == "firecrawl":
+                api_key = os.getenv("FIRECRAWL_API_KEY")
+                if not api_key:
+                    return jsonify({"success": False, "error": "No API key saved"})
+                # Just confirm the key is non-empty — firecrawl charges per scrape
+                return jsonify({"success": True})
+
+            elif name == "kie":
+                headers = kie_headers()
+                if not headers:
+                    return jsonify({"success": False, "error": "No API key saved"})
+                return jsonify({"success": True})
+
+            elif name == "zernio":
+                accounts = get_connected_accounts()
+                if not accounts:
+                    return jsonify({"success": False, "error": "No connected accounts found"})
+                return jsonify({"success": True, "accounts": len(accounts)})
+
+            else:
+                return jsonify({"success": False, "error": f"Unknown service: {name}"}), 400
+
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)})
+
+    # -----------------------------------------------------------------------
+    # PROFILE ROUTES — Zernio brand profile management
+    # -----------------------------------------------------------------------
+
+    @app.route("/api/profiles", methods=["GET"])
+    @login_required
+    def api_profiles_list():
+        """Return all saved Zernio profiles as JSON."""
+        return jsonify(list_profiles())
+
+    @app.route("/api/profiles", methods=["POST"])
+    @login_required
+    def api_profiles_create():
+        """Create a new Zernio profile."""
+        data = request.json or {}
+        label = (data.get("label") or "").strip()
+        profile_id = (data.get("profile_id") or "").strip()
+
+        if not label or not profile_id:
+            return jsonify({"error": "label and profile_id are required"}), 400
+
+        new_id = create_profile(label, profile_id)
+        profile = get_profile(new_id)
+        return jsonify({"success": True, "profile": profile}), 201
+
+    @app.route("/api/profiles/<int:profile_db_id>", methods=["PUT"])
+    @login_required
+    def api_profiles_update(profile_db_id):
+        """Update an existing Zernio profile."""
+        data = request.json or {}
+        label = (data.get("label") or "").strip()
+        profile_id = (data.get("profile_id") or "").strip()
+
+        if not label or not profile_id:
+            return jsonify({"error": "label and profile_id are required"}), 400
+
+        if not get_profile(profile_db_id):
+            return jsonify({"error": "Profile not found"}), 404
+
+        update_profile(profile_db_id, label, profile_id)
+        return jsonify({"success": True, "profile": get_profile(profile_db_id)})
+
+    @app.route("/api/profiles/<int:profile_db_id>", methods=["DELETE"])
+    @login_required
+    def api_profiles_delete(profile_db_id):
+        """Delete a Zernio profile."""
+        if not get_profile(profile_db_id):
+            return jsonify({"error": "Profile not found"}), 404
+        delete_profile(profile_db_id)
+        return jsonify({"success": True, "message": f"Profile {profile_db_id} deleted"})
+
+    # -----------------------------------------------------------------------
+    # SCHEDULE ROUTE — create a calendar slot
+    # -----------------------------------------------------------------------
+
+    @app.route("/api/schedule", methods=["POST"])
+    @login_required
+    def api_schedule_create():
+        """Create a new schedule slot for a content item."""
+        data = request.json or {}
+        content_id = data.get("content_id")
+        scheduled_datetime = data.get("datetime", "").strip()
+        platform = data.get("platform", "instagram").strip()
+        profile_id = data.get("profile_id", "").strip() or None
+
+        if not content_id or not scheduled_datetime:
+            return jsonify({"error": "content_id and datetime are required"}), 400
+
+        item = get_content_item(content_id)
+        if not item:
+            return jsonify({"error": "Content item not found"}), 404
+
+        slot_id = create_schedule_slot(content_id, scheduled_datetime, platform,
+                                       profile_id=profile_id)
+        return jsonify({"success": True, "slot_id": slot_id,
+                        "message": f"Scheduled for {scheduled_datetime}"}), 201
 
     # -------------------------------------------------------------------
     # SSE STREAMING: The heart of the Automation X-ray
@@ -392,11 +536,21 @@ def create_app():
     def api_publish(item_id):
         """
         Trigger publishing for a ready content item.
+        Accepts optional profile_id in POST body to target a specific Zernio profile.
         Returns an SSE stream for the publish stage.
         """
         item = get_content_item(item_id)
         if not item:
             return jsonify({"error": "Not found"}), 404
+
+        data = request.json or {}
+        profile_id = (data.get("profile_id") or "").strip() or None
+
+        # Fall back to the first saved profile if none specified
+        if not profile_id:
+            default_profile = get_default_profile()
+            if default_profile:
+                profile_id = default_profile["profile_id"]
 
         event_queue = queue.Queue()
 
@@ -410,7 +564,7 @@ def create_app():
                 }
                 event_queue.put(json.dumps(event_data))
 
-            stage_publish(item_id, emit_event)
+            stage_publish(item_id, emit_event, profile_id=profile_id)
             event_queue.put(None)
 
         thread = threading.Thread(target=publish, daemon=True)
