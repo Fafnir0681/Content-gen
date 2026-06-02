@@ -46,8 +46,17 @@ def get_accounts_for_profile(profile_id, emit_event=None):
     Fetch all connected Zernio accounts, then filter to those belonging
     to the given profile_id.
 
-    Returns a list of account dicts with at minimum: _id, platform
-    Falls back to all accounts if profile_id is None.
+    Zernio's /accounts endpoint returns ALL accounts visible to the API key,
+    including accounts from other users in the same workspace. The profileId
+    field (confirmed field name) is the only safe way to scope to the correct
+    brand profile.
+
+    IMPORTANT: This function never falls back to all accounts on a failed
+    filter. If the filter returns empty, it returns empty and lets the caller
+    fail safely. Falling back to all accounts risks publishing to accounts
+    belonging to other workspace members.
+
+    Returns a list of account dicts with at minimum: _id, platform, profileId
     """
     emit = emit_event or (lambda *a, **kw: None)
     headers = _get_headers()
@@ -65,30 +74,43 @@ def get_accounts_for_profile(profile_id, emit_event=None):
         data = response.json()
 
         # Zernio returns either a list or {"accounts": [...]}
-        accounts = data if isinstance(data, list) else data.get("accounts", [])
+        all_accounts = data if isinstance(data, list) else data.get("accounts", [])
 
-        # TEMP DEBUG — remove once account field names are confirmed
-        if accounts:
-            print(f"[ZERNIO DEBUG] First account keys: {list(accounts[0].keys())}")
-            print(f"[ZERNIO DEBUG] First account sample: { {k: v for k, v in accounts[0].items() if k != '_id'} }")
-        else:
-            print("[ZERNIO DEBUG] /accounts returned empty list")
-        # END TEMP DEBUG
+        if not profile_id:
+            # No profile specified — refuse to return all accounts to avoid
+            # accidentally targeting other workspace members' accounts.
+            emit("publish", "error",
+                 "No profile_id specified — cannot safely resolve accounts. "
+                 "Select a Brand Profile before publishing.")
+            return []
 
-        if profile_id:
-            # Filter to accounts that belong to this profile
-            filtered = [
-                a for a in accounts
-                if a.get("profile") == profile_id
-                or a.get("profileId") == profile_id
-                or a.get("profile_id") == profile_id
-                or a.get("group") == profile_id
+        # Filter strictly by the confirmed profileId field name.
+        # Do NOT fall back to all_accounts if this returns empty.
+        filtered = [
+            a for a in all_accounts
+            if a.get("profileId") == profile_id
+        ]
+
+        if filtered:
+            # Safety confirmation — logged to Railway so we can verify targeting
+            account_labels = [
+                f"{a.get('platform', '?')}:{a.get('username') or a.get('name') or a.get('_id', '?')}"
+                for a in filtered
             ]
-            # If the filter returns nothing (API may not expose profile field),
-            # fall back to all accounts so publishing isn't silently broken.
-            return filtered if filtered else accounts
+            print(f"[ZERNIO] Profile {profile_id} resolved to: {account_labels}")
+            emit("publish", "progress",
+                 f"Targeting {len(filtered)} account(s) for this profile: "
+                 f"{', '.join(account_labels)}")
+        else:
+            # Filter returned nothing — fail loudly. Better to abort than to
+            # publish to wrong accounts.
+            print(f"[ZERNIO] WARNING: No accounts matched profileId={profile_id}. "
+                  f"Total accounts visible: {len(all_accounts)}. Aborting.")
+            emit("publish", "error",
+                 f"No accounts found for profile {profile_id}. "
+                 f"Check your Brand Profile ID in Settings.")
 
-        return accounts
+        return filtered
 
     except requests.exceptions.RequestException as e:
         emit("publish", "error", f"Failed to fetch Zernio accounts: {str(e)}")
