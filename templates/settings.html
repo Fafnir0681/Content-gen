@@ -44,6 +44,7 @@
             <div class="input-group">
                 <input :type="services.openrouter.showKey ? 'text' : 'password'"
                        class="input" style="padding-right: 42px;"
+                       autocomplete="off"
                        x-model="services.openrouter.key"
                        placeholder="sk-or-...">
                 <button class="input-toggle" @click="services.openrouter.showKey = !services.openrouter.showKey">
@@ -124,6 +125,7 @@
             <div class="input-group">
                 <input :type="services.firecrawl.showKey ? 'text' : 'password'"
                        class="input" style="padding-right: 42px;"
+                       autocomplete="off"
                        x-model="services.firecrawl.key"
                        placeholder="fc-...">
                 <button class="input-toggle" @click="services.firecrawl.showKey = !services.firecrawl.showKey">
@@ -194,6 +196,7 @@
             <div class="input-group">
                 <input :type="services.kie.showKey ? 'text' : 'password'"
                        class="input" style="padding-right: 42px;"
+                       autocomplete="off"
                        x-model="services.kie.key"
                        placeholder="Your Kie.ai API key">
                 <button class="input-toggle" @click="services.kie.showKey = !services.kie.showKey">
@@ -272,6 +275,7 @@
             <div class="input-group">
                 <input :type="services.zernio.showKey ? 'text' : 'password'"
                        class="input" style="padding-right: 42px;"
+                       autocomplete="off"
                        x-model="services.zernio.key"
                        placeholder="Your Zernio API key (sk_...)">
                 <button class="input-toggle" @click="services.zernio.showKey = !services.zernio.showKey">
