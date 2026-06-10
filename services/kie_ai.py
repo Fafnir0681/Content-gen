@@ -124,8 +124,8 @@ def generate_image(prompt, emit_event=None):
             status_response.raise_for_status()
             status_data = status_response.json()
 
-            # Kie.ai nests status under "data" wrapper
-            data = status_data.get("data", status_data)
+            # Kie.ai nests status under "data" wrapper; "or" guards against explicit null
+            data = status_data.get("data") or status_data
             state = (data.get("state") or status_data.get("state", "unknown")).lower()
 
             # -- Emit polling events (the X-ray magic!) --
@@ -263,7 +263,8 @@ def generate_video(prompt, emit_event=None):
             status_data = status_response.json()
 
             # Veo uses data.successFlag: 0=generating, 1=success, 2/3=failed
-            data = status_data.get("data", status_data)
+            # "or" guards against explicit null in "data" field
+            data = status_data.get("data") or status_data
             success_flag = data.get("successFlag", 0)
             state = data.get("state", "unknown")
             if success_flag == 1:
