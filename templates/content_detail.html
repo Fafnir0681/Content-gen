@@ -272,12 +272,12 @@
                     {% endif %}
                     <div class="flex justify-between">
                         <span style="color: var(--text-subtle);">Created</span>
-                        <span style="color: var(--text-muted);">{{ item.created_at[:16] if item.created_at else 'N/A' }}</span>
+                        <span style="color: var(--text-muted);">{{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else 'N/A' }}</span>
                     </div>
                     {% if item.updated_at %}
                     <div class="flex justify-between">
                         <span style="color: var(--text-subtle);">Updated</span>
-                        <span style="color: var(--text-muted);">{{ item.updated_at[:16] }}</span>
+                        <span style="color: var(--text-muted);">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') if item.updated_at else 'N/A' }}</span>
                     </div>
                     {% endif %}
                     {% if item.include_video %}

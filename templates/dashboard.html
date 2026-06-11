@@ -112,7 +112,7 @@
                         {% endif %}
                     </div>
                     <span class="content-card-date">
-                        {{ item.created_at[:10] if item.created_at else '' }}
+                        {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}
                     </span>
                 </div>
             </div>
