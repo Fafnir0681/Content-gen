@@ -203,7 +203,7 @@
                     {% if logs %}
                     {% for log in logs %}
                     <div class="log-entry" data-stage="{{ log.stage }}">
-                        <span class="log-timestamp">{{ log.created_at[11:19] if log.created_at and log.created_at|length > 19 else '' }}</span>
+                        <span class="log-timestamp">{{ log.created_at.strftime('%H:%M:%S') if log.created_at else '' }}</span>
                         <span class="log-status-icon">
                             {% if log.status == 'complete' %}
                             <span style="color: var(--success);">&#10003;</span>
