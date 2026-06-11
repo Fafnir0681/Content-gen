@@ -64,7 +64,7 @@ def create_app():
     }
     for db_key, env_key in _env_map.items():
         saved = get_setting(db_key, "")
-        if saved and not os.environ.get(env_key):
+        if saved:
             os.environ[env_key] = saved
 
     # -- Store for active SSE streams --
