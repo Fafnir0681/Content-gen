@@ -22,13 +22,15 @@ def build(brand):
     marks = {'ondark': os.path.join(brand, 'mark', 'mark-full-ondark-tight.svg'),
              'onlight': os.path.join(brand, 'mark', 'mark-full-tight.svg')}
     n = 0
-    for ground, mpath in marks.items():
+    import glob
+    for wpath in sorted(glob.glob(os.path.join(wm_dir, 'wordmark-*.svg'))):
+        base = os.path.basename(wpath)[len('wordmark-'):-len('.svg')]
+        layout = 'stacked' if base.startswith('stacked') else 'inline'
+        ground = 'ondark' if 'ondark' in base else 'onlight'
+        mpath = marks[ground]
         mvb, minner, mw, mh = parts(mpath)
-        for layout in ('stacked', 'inline'):
-            for labs in ('neutral', 'red'):
-                wpath = os.path.join(wm_dir, f'wordmark-{layout}-{ground}-{labs}.svg')
-                if not os.path.exists(wpath):
-                    continue
+        if True:
+            if True:
                 wvb, winner, ww, wh = parts(wpath)
                 M = wh                      # mark height == wordmark block height
                 gap = M * 0.22
@@ -38,7 +40,7 @@ def build(brand):
                        f'<svg x="0" y="{(H-M)/2:.2f}" width="{M:.2f}" height="{M:.2f}" viewBox="{mvb}">{minner}</svg>'
                        f'<svg x="{M+gap:.2f}" y="{(H-wh)/2:.2f}" width="{ww:.2f}" height="{wh:.2f}" viewBox="{wvb}">{winner}</svg>'
                        f'</svg>')
-                open(os.path.join(out_dir, f'lockup-{layout}-{ground}-{labs}.svg'), 'w').write(svg)
+                open(os.path.join(out_dir, f'lockup-{base}.svg'), 'w').write(svg)
                 n += 1
     print(f'wrote {n} lockup files to {out_dir}')
 

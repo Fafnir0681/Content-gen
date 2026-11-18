@@ -7,8 +7,8 @@ const B = path.resolve(__dirname, '..');
 const read = p => fs.readFileSync(path.join(B, p), 'utf8');
 const b64 = p => 'data:image/png;base64,' + fs.readFileSync(path.join(B, p)).toString('base64');
 
-const LOCKUP = read('lockup/lockup-stacked-ondark-neutral.svg');
-const LOCKUP_INLINE = read('lockup/lockup-inline-ondark-neutral.svg');
+const LOCKUP = read('lockup/lockup-stacked-ondark-redforge-neutral.svg');
+const LOCKUP_INLINE = read('lockup/lockup-inline-ondark-redforge-neutral.svg');
 const MARK = read('mark/mark-full-ondark-tight.svg');
 const PLATE = b64('mascot/mascot-plate.png');
 const BUST  = b64('mascot/mascot-bust.png');
@@ -43,9 +43,9 @@ const SCENES = {
  // Layout rule: two zones, no overlap. Type lives in the left zone,
  // the mascot is contained in the right zone and never crosses in.
  'twitch-banner': { w:1200, h:480, lock:470, plate:'96%', pad:52, label:'Forged live', ls:15 },
- 'twitch-offline':{ w:1920, h:1080, lock:860, plate:'100%', pad:96, label:'Currently offline', ls:30 },
- 'kick-banner':   { w:1920, h:1080, lock:860, plate:'100%', pad:96, label:'Forged live', ls:30 },
- 'kick-offline':  { w:1920, h:1080, lock:860, plate:'100%', pad:96, label:'Stream ended', ls:30 },
+ 'twitch-offline':{ w:1920, h:1080, lock:900, plate:'97%', pad:130, label:'Currently offline', ls:28, overlap:true },
+ 'kick-banner':   { w:1920, h:1080, lock:900, plate:'97%', pad:130, label:'Forged live', ls:28, overlap:true },
+ 'kick-offline':  { w:1920, h:1080, lock:900, plate:'97%', pad:130, label:'Stream ended', ls:28, overlap:true },
 };
 
 /* YouTube: 2560x1440 upload, but only a ~1546x423 centred band shows on every
@@ -63,6 +63,20 @@ function panelHTML(title, w, h) {
        <div class="rule" style="width:${h*0.62}px;margin-top:${h*0.09}px;margin-bottom:0"></div>
      </div>
    </div>`;
+}
+
+function overlap(s) {
+  const L = s.lockFile ? read('lockup/' + s.lockFile) : LOCKUP;
+  return `
+   <div class="shard"></div><div class="grain"></div>
+   <div class="lock" style="position:absolute;left:${s.pad}px;top:50%;
+        transform:translateY(-50%);width:${s.lock}px;z-index:1">${L}</div>
+   <div class="rule" style="position:absolute;left:${s.pad}px;top:63%;
+        width:${Math.round(s.lock*0.56)}px;margin:0;z-index:1"></div>
+   <div class="label" style="position:absolute;left:${s.pad}px;top:68%;
+        font-size:${s.ls}px;z-index:1">${s.label}</div>
+   <img src="${PLATE}" style="position:absolute;right:${Math.round(s.pad*0.9)}px;bottom:0;
+        height:${s.plate};object-fit:contain;object-position:bottom;z-index:2">`;
 }
 
 function render(s) {
@@ -118,7 +132,7 @@ const EXTRA = {
   for (const [name, s] of Object.entries(ALL)) {
     if (only && name !== only) continue;
     const page = await browser.newPage({ viewport: { width: s.w, height: s.h }, deviceScaleFactor: 1 });
-    const inner = s.custom !== undefined ? s.custom : render(s);
+    const inner = s.custom !== undefined ? s.custom : (s.overlap ? overlap(s) : render(s));
     await page.setContent(`<style>${CSS}</style><div class="stage" style="width:${s.w}px;height:${s.h}px">${inner}</div>`);
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(900);

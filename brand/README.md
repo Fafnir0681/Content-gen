@@ -97,11 +97,19 @@ Type: **Chakra Petch** (SIL Open Font License — cleared for commercial use
 including merch). `PLAY` is weight 400, `FORGE` weight 700; the break makes
 the compound name read as its two ideas, with emphasis landing on FORGE.
 
+**FORGE is set in brand red `#D62325`** (the `-redforge` variants, which are
+the default used across every channel asset). Red keeps FORGE dominant — it
+holds the heavy weight AND gains the accent — and chains the wordmark to the
+mark's disc, the mascot's flask and the sash. Gunmetal variants (`-gunmid`,
+`-gunlight`, `-gungrad`) exist but invert the emphasis, handing dominance to
+PLAY; they are kept as alternates, not defaults.
+
 **All type is outlined to paths — these files carry no font dependency.**
 Nobody needs Chakra Petch installed to open, render or print them.
 
 ### Variants (8 wordmark + 8 lockup)
 - Layout: `stacked` (two lines) or `inline` (one line)
+- FORGE: default (matches ground), `-redforge` (default in use), or gunmetal
 - Ground: `ondark` (white type) or `onlight` (black type)
 - LABS: `neutral` (matches the type) or `red` (#D62325)
 
