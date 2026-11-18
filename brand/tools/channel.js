@@ -70,13 +70,13 @@ function overlap(s) {
   return `
    <div class="shard"></div><div class="grain"></div>
    <div class="lock" style="position:absolute;left:${s.pad}px;top:50%;
-        transform:translateY(-50%);width:${s.lock}px;z-index:1">${L}</div>
+        transform:translateY(-50%);width:${s.lock}px;z-index:3">${L}</div>
    <div class="rule" style="position:absolute;left:${s.pad}px;top:63%;
-        width:${Math.round(s.lock*0.56)}px;margin:0;z-index:1"></div>
+        width:${Math.round(s.lock*0.56)}px;margin:0;z-index:3"></div>
    <div class="label" style="position:absolute;left:${s.pad}px;top:68%;
-        font-size:${s.ls}px;z-index:1">${s.label}</div>
+        font-size:${s.ls}px;z-index:3">${s.label}</div>
    <img src="${PLATE}" style="position:absolute;right:${Math.round(s.pad*0.9)}px;bottom:0;
-        height:${s.plate};object-fit:contain;object-position:bottom;z-index:2">`;
+        height:${s.plate};object-fit:contain;object-position:bottom;z-index:1">`;
 }
 
 function render(s) {
