@@ -46,7 +46,7 @@ const SCENES = {
  'twitch-banner': { w:1200, h:480, lock:775, plate:'104%', pad:52, label:'Forged live', ls:15, overlap:true },
  'twitch-offline': { w:1920, h:1080, custom:`
    <div class="shard"></div><div class="grain"></div>
-   <div class="lock" style="position:absolute;left:130px;top:46%;
+   <div class="lock" style="position:absolute;left:130px;top:40%;
         transform:translateY(-50%);width:1382px;z-index:3">${LOCKUP_WHITE}</div>
    <div class="rule" style="position:absolute;left:130px;top:55%;width:330px;margin:0;z-index:3"></div>
    <div class="label" style="position:absolute;left:130px;top:59%;font-size:22px;z-index:3">Currently offline</div>
