@@ -18,13 +18,17 @@ simplified small cut. Use the right one for the size:
 
 | Size | File |
 |---|---|
-| >= 64px | `mark/mark-full.svg` (light bg) / `mark-full-ondark.svg` (dark bg) |
+| >= 64px | `mark/mark-full-tight.svg` (light bg) / `mark-full-ondark-tight.svg` (dark bg) |
 | <= 48px | `mark/mark-small.svg` / `mark-small-ondark.svg` |
 
 The on-dark variants exist because the black outer ring disappears against a
 dark background; they carry a white ring instead.
 
-Geometry: viewBox 2048x2048, disc centre (1024,1024), radius 428.
+Geometry: the generated source has viewBox 2048x2048 with the disc at centre
+(1024,1024), radius 428 — i.e. the disc fills only ~42% of the frame. The
+`-tight` variants crop the viewBox to the disc (~96% fill) and are what every
+avatar, badge and lockup is rendered from. Use the tight variants; the
+uncropped originals are kept only as the untouched source.
 
 ### Rendered sizes
 `avatar-twitch-800`, `avatar-kick-128`, `discord-icon-512`, `avatar-ondark-800`
@@ -50,7 +54,40 @@ Chromium (Playwright):
 
     node brand/tools/rendersvg.js <in.svg> <out.png> <size> <light|dark|none>
 
+## Wordmark
+
+Type: **Chakra Petch** (SIL Open Font License — cleared for commercial use
+including merch). `PLAY` is weight 400, `FORGE` weight 700; the break makes
+the compound name read as its two ideas, with emphasis landing on FORGE.
+
+**All type is outlined to paths — these files carry no font dependency.**
+Nobody needs Chakra Petch installed to open, render or print them.
+
+### Variants (8 wordmark + 8 lockup)
+- Layout: `stacked` (two lines) or `inline` (one line)
+- Ground: `ondark` (white type) or `onlight` (black type)
+- LABS: `neutral` (matches the type) or `red` (#D62325)
+
+Red LABS works on either ground. The neutral MUST match the ground —
+white LABS on a light background is invisible.
+
+In the stacked lockup, `LABS` is tracked so it spans exactly the width of
+`PLAYFORGE`. That track is solved arithmetically in `tools/makewordmark.py`,
+not eyeballed, so it stays correct if the type ever changes.
+
+### Clear space and minimum size
+- Clear space on all sides: at least the cap height of `FORGE`.
+- Stacked lockup: do not use below 200px wide. Inline: not below 240px.
+- Below those sizes use the mark alone (`mark/mark-small.svg`).
+
+## Regenerating
+
+    python3 tools/makewordmark.py <ChakraPetch-Regular.ttf> <ChakraPetch-Bold.ttf> wordmark/
+    python3 tools/makelockup.py .
+
+The TTFs are not vendored; fetch them from Google Fonts. The outlined SVGs
+are the deliverable, so this is only needed if the type or tracking changes.
+
 ## Still open
-- Wordmark (must be set in real licensed type, not image-generated)
 - Mascot bust crop, emote set, alpha overlay plate
-- Formal type pairing
+- Body typeface to pair with Chakra Petch for panels and captions
