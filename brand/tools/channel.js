@@ -42,10 +42,10 @@ const CSS = `
 const SCENES = {
  // Layout rule: two zones, no overlap. Type lives in the left zone,
  // the mascot is contained in the right zone and never crosses in.
- 'twitch-banner': { w:1200, h:480, lock:470, plate:'96%', pad:52, label:'Forged live', ls:15 },
- 'twitch-offline':{ w:1920, h:1080, lock:900, plate:'97%', pad:130, label:'Currently offline', ls:28, overlap:true },
- 'kick-banner':   { w:1920, h:1080, lock:900, plate:'97%', pad:130, label:'Forged live', ls:28, overlap:true },
- 'kick-offline':  { w:1920, h:1080, lock:900, plate:'97%', pad:130, label:'Stream ended', ls:28, overlap:true },
+ 'twitch-banner': { w:1200, h:480, lock:775, plate:'104%', pad:52, label:'Forged live', ls:15, overlap:true },
+ 'twitch-offline':{ w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Currently offline', ls:28, overlap:true },
+ 'kick-banner':   { w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Forged live', ls:28, overlap:true },
+ 'kick-offline':  { w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Stream ended', ls:28, overlap:true },
 };
 
 /* YouTube: 2560x1440 upload, but only a ~1546x423 centred band shows on every
