@@ -47,6 +47,21 @@ including the long coat and boots.
 | `mascot-master.png` | source, baked near-black background |
 | `mascot-cutout.png` | alpha cut, full 1280x720 frame |
 | `mascot-plate.png` | alpha cut, trimmed to subject (484x680) — use this on the overlay |
+| `mascot-bust.png` | 310x310 head-and-shoulders crop with alpha |
+| `mascot-avatar-dark-{800,512,256,128}.png` | square avatars, #110D0D ground |
+| `mascot-avatar-red-800.png` | red-ground alternate (weaker — see below) |
+
+### Avatars
+Ship them SQUARE with the background filled. Every platform applies its own
+circular mask, so a pre-cropped circle would be double-cropped.
+
+The bust is a 310x310 crop at +515+0 of `mascot-cutout.png`. About 10% of the
+subject (shoulders) falls outside the inscribed circle, which is correct —
+shoulders should bleed off. The face and the red flask both sit inside it,
+checked down to 96px.
+
+Use the dark ground. On red, the character's own flask and sash lose contrast
+against the background.
 
 ### How the cutout works
 The background is `#0E0D0C`, and the character's own outlines, boots and
