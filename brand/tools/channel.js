@@ -46,8 +46,6 @@ const SCENES = {
  'twitch-banner': { w:1200, h:480, lock:775, plate:'104%', pad:52, label:'Forged live', ls:15, overlap:true },
  'twitch-offline': { w:1920, h:1080, custom:`
    <div class="shard"></div><div class="grain"></div>
-   <img src="${PLATE}" style="position:absolute;right:26px;bottom:0;height:100%;
-        object-fit:contain;object-position:bottom;z-index:1">
    <div class="lock" style="position:absolute;left:130px;top:46%;
         transform:translateY(-50%);width:1382px;z-index:3">${LOCKUP_WHITE}</div>
    <div class="rule" style="position:absolute;left:130px;top:55%;width:330px;margin:0;z-index:3"></div>
