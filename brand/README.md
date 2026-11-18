@@ -42,6 +42,28 @@ Viking in a lab coat; no face-cam, so the mascot carries on-screen identity.
 Every derived asset (bust crop, emotes, overlay plate) must match THIS file,
 including the long coat and boots.
 
+| File | Use |
+|---|---|
+| `mascot-master.png` | source, baked near-black background |
+| `mascot-cutout.png` | alpha cut, full 1280x720 frame |
+| `mascot-plate.png` | alpha cut, trimmed to subject (484x680) — use this on the overlay |
+
+### How the cutout works
+The background is `#0E0D0C`, and the character's own outlines, boots and
+armour are the SAME near-black. Colour-keying or flood-filling therefore
+leaks through the outlines and hollows the figure out — verified, it does.
+
+`tools/cutout.py` treats it as a silhouette problem instead: mark everything
+unlike the background, close gaps so the outline is continuous, keep the
+largest connected component, then fill interior holes so the dark regions
+inside the silhouette come back. Edges stay antialiased (~0.5% of the frame
+is partial alpha) with no dark halo on light or coloured grounds.
+
+    python3 tools/cutout.py mascot/mascot-master.png out.png [tolerance] [feather]
+
+Tolerance is insensitive between 18 and 40 — the subject measures 16.2% of
+the frame across that whole range.
+
 ## Glass variants
 
 See `glass-motion/README.md`. Held for transition/stinger animation, not part
