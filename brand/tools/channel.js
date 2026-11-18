@@ -54,7 +54,7 @@ const SCENES = {
      <div>PLACEHOLDER &mdash; your schedule here</div>
      <div>PLACEHOLDER &mdash; @yourhandle</div>
    </div>
-   <div class="label" style="position:absolute;left:845px;top:72%;font-size:62px;font-weight:700;z-index:3">Currently offline</div>` },
+   <div class="label" style="position:absolute;left:760px;top:72%;font-size:62px;font-weight:700;z-index:3">Currently offline</div>` },
  'kick-banner':   { w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Forged live', ls:28, overlap:true },
  'kick-offline':  { w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Stream ended', ls:28, overlap:true },
 };
