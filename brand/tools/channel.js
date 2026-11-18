@@ -49,11 +49,12 @@ const SCENES = {
    <div class="lock" style="position:absolute;left:130px;top:40%;
         transform:translateY(-50%);width:1382px;z-index:3">${LOCKUP_WHITE}</div>
    <div class="rule" style="position:absolute;left:130px;top:55%;width:330px;margin:0;z-index:3"></div>
-   <div class="label" style="position:absolute;left:130px;top:59%;font-size:22px;z-index:3">Currently offline</div>
-   <div class="ph" style="position:absolute;left:130px;top:66%;font-size:17px;line-height:2;z-index:3">
+   <div class="ph" style="position:absolute;left:130px;top:59%;font-size:17px;line-height:2;
+        color:#D62325;z-index:3">
      <div>PLACEHOLDER &mdash; your schedule here</div>
      <div>PLACEHOLDER &mdash; @yourhandle</div>
-   </div>` },
+   </div>
+   <div class="label" style="position:absolute;left:845px;top:72%;font-size:31px;z-index:3">Currently offline</div>` },
  'kick-banner':   { w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Forged live', ls:28, overlap:true },
  'kick-offline':  { w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Stream ended', ls:28, overlap:true },
 };
