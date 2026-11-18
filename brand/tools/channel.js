@@ -44,6 +44,10 @@ const YT = { w:2560, h:1440, safeW:1546, safeH:423 };
 const PANELS = ['About','Schedule','Rules','Specs','Commands','Support'];
 
 const SCENES = {
+ 'scene-starting':  { w:1920, h:1080, fn:s => sceneLeft('Starting soon', s.w, s.h) },
+ 'scene-brb':       { w:1920, h:1080, fn:s => sceneLeft('Be right back', s.w, s.h) },
+ 'scene-technical': { w:1920, h:1080, fn:s => sceneLeft('Technical difficulties', s.w, s.h) },
+ 'scene-ending':    { w:1920, h:1080, fn:s => sceneLeft('Thanks for watching', s.w, s.h) },
  'twitch-offline': { w:1920, h:1080, custom:null, fn:s => screen16('Currently offline', true, s.w, s.h) },
  'kick-offline':   { w:1920, h:1080, fn:s => screen16('Stream ended', true, s.w, s.h) },
  'kick-banner':    { w:1920, h:1080, fn:s => screen16('Forged live', false, s.w, s.h) },
@@ -61,6 +65,22 @@ function panelHTML(title, w, h) {
        <div class="rule" style="width:${h*0.62}px;margin-top:${h*0.09}px;margin-bottom:0"></div>
      </div>
    </div>`;
+}
+
+
+/* Scene screens: mascot on the LEFT, type to his right.
+   Same vertical rhythm and type treatment as the approved offline screen. */
+function sceneLeft(label, w, h) {
+  const k = w / 1920;
+  return `
+   <div class="shard"></div><div class="grain"></div>
+   <img src="${PLATE}" style="position:absolute;left:${30*k}px;bottom:0;height:100%;
+        object-fit:contain;object-position:bottom;z-index:1">
+   <div class="lock" style="position:absolute;left:${880*k}px;top:40%;
+        transform:translateY(-50%);width:${930*k}px;z-index:3">${LOCKUP_WHITE}</div>
+   <div class="rule" style="position:absolute;left:${880*k}px;top:55%;width:${300*k}px;margin:0;z-index:3"></div>
+   <div class="label" style="position:absolute;left:${880*k}px;top:62%;
+        font-size:${62*k}px;font-weight:700;z-index:3">${label}</div>`;
 }
 
 function screen16(label, showPh, w, h) {
