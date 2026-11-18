@@ -40,30 +40,17 @@ const CSS = `
  .rule{margin-top:5%;margin-bottom:3.5%;height:2px;background:linear-gradient(90deg,#D62325,rgba(214,35,37,0))}
 `;
 
-const SCENES = {
- // Layout rule: two zones, no overlap. Type lives in the left zone,
- // the mascot is contained in the right zone and never crosses in.
- 'twitch-banner': { w:1200, h:480, lock:775, plate:'104%', pad:52, label:'Forged live', ls:15, overlap:true },
- 'twitch-offline': { w:1920, h:1080, custom:`
-   <div class="shard"></div><div class="grain"></div>
-   <div class="lock" style="position:absolute;left:130px;top:40%;
-        transform:translateY(-50%);width:1382px;z-index:3">${LOCKUP_WHITE}</div>
-   <div class="rule" style="position:absolute;left:130px;top:55%;width:330px;margin:0;z-index:3"></div>
-   <div class="ph" style="position:absolute;left:130px;top:59%;font-size:34px;line-height:1.7;
-        color:#FFFFFF;z-index:3">
-     <div>PLACEHOLDER &mdash; your schedule here</div>
-     <div>PLACEHOLDER &mdash; @yourhandle</div>
-   </div>
-   <div class="label" style="position:absolute;left:760px;top:72%;font-size:62px;font-weight:700;z-index:3">Currently offline</div>` },
- 'kick-banner':   { w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Forged live', ls:28, overlap:true },
- 'kick-offline':  { w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Stream ended', ls:28, overlap:true },
-};
-
-/* YouTube: 2560x1440 upload, but only a ~1546x423 centred band shows on every
-   device. All content lives inside that band. */
 const YT = { w:2560, h:1440, safeW:1546, safeH:423 };
-
 const PANELS = ['About','Schedule','Rules','Specs','Commands','Support'];
+
+const SCENES = {
+ 'twitch-offline': { w:1920, h:1080, custom:null, fn:s => screen16('Currently offline', true, s.w, s.h) },
+ 'kick-offline':   { w:1920, h:1080, fn:s => screen16('Stream ended', true, s.w, s.h) },
+ 'kick-banner':    { w:1920, h:1080, fn:s => screen16('Forged live', false, s.w, s.h) },
+ 'twitch-banner':  { w:1200, h:480,  fn:s => screenWide('Forged live', s.w, s.h) },
+ 'wide-live':      { w:1546, h:423,  fn:s => screenWide('Forged live', s.w, s.h) },
+ 'wide-offline':   { w:1546, h:423,  fn:s => screenWide('Currently offline', s.w, s.h) },
+};
 
 function panelHTML(title, w, h) {
   return `<div class="shard"></div>
@@ -74,6 +61,32 @@ function panelHTML(title, w, h) {
        <div class="rule" style="width:${h*0.62}px;margin-top:${h*0.09}px;margin-bottom:0"></div>
      </div>
    </div>`;
+}
+
+function screen16(label, showPh, w, h) {
+  const k = w / 1920;
+  return `
+   <div class="shard"></div><div class="grain"></div>
+   <div class="lock" style="position:absolute;left:${130*k}px;top:40%;
+        transform:translateY(-50%);width:${1382*k}px;z-index:3">${LOCKUP_WHITE}</div>
+   <div class="rule" style="position:absolute;left:${130*k}px;top:55%;width:${330*k}px;margin:0;z-index:3"></div>
+   ${showPh ? `<div class="ph" style="position:absolute;left:${130*k}px;top:59%;
+        font-size:${34*k}px;line-height:1.7;color:#FFFFFF;z-index:3">
+     <div>PLACEHOLDER &mdash; your schedule here</div>
+     <div>PLACEHOLDER &mdash; @yourhandle</div></div>` : ''}
+   <div class="label" style="position:absolute;left:${760*k}px;top:72%;
+        font-size:${62*k}px;font-weight:700;z-index:3">${label}</div>`;
+}
+
+function screenWide(label, w, h) {
+  const k = w / 1920;
+  return `
+   <div class="shard"></div><div class="grain"></div>
+   <div class="lock" style="position:absolute;left:${130*k}px;top:40%;
+        transform:translateY(-50%);width:${1382*k}px;z-index:3">${LOCKUP_WHITE}</div>
+   <div class="rule" style="position:absolute;left:${130*k}px;top:62%;width:${330*k}px;margin:0;z-index:3"></div>
+   <div class="label" style="position:absolute;left:${760*k}px;top:74%;
+        font-size:${62*k}px;font-weight:700;z-index:3">${label}</div>`;
 }
 
 function overlap(s) {
@@ -107,29 +120,8 @@ const EXTRA = {
    <div class="shard"></div><div class="grain"></div>
    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
         width:${YT.safeW}px;height:${YT.safeH}px;overflow:hidden">
-     <img src="${PLATE}" style="position:absolute;right:40px;bottom:0;height:100%;
-          object-fit:contain;object-position:bottom;z-index:1">
-     <div class="lock" style="position:absolute;left:30px;top:46%;
-          transform:translateY(-50%);width:1120px;z-index:3">${LOCKUP}</div>
-     <div class="rule" style="position:absolute;left:30px;top:70%;width:300px;margin:0;z-index:3"></div>
-     <div class="label" style="position:absolute;left:30px;top:76%;font-size:17px;z-index:3">Forged live</div>
+     ${screenWide('Forged live', YT.safeW, YT.safeH)}
    </div>` },
- 'wide-live': { w:1546, h:423, custom:`
-   <div class="shard"></div><div class="grain"></div>
-   <img src="${PLATE}" style="position:absolute;right:46px;bottom:0;height:100%;
-        object-fit:contain;object-position:bottom;z-index:1">
-   <div class="lock" style="position:absolute;left:34px;top:44%;
-        transform:translateY(-50%);width:900px;z-index:3">${LOCKUP}</div>
-   <div class="rule" style="position:absolute;left:34px;top:70%;width:270px;margin:0;z-index:3"></div>
-   <div class="label" style="position:absolute;left:34px;top:76%;font-size:16px;z-index:3">Forged live</div>` },
- 'wide-offline': { w:1546, h:423, custom:`
-   <div class="shard"></div><div class="grain"></div>
-   <img src="${PLATE}" style="position:absolute;right:46px;bottom:0;height:100%;
-        object-fit:contain;object-position:bottom;z-index:1">
-   <div class="lock" style="position:absolute;left:34px;top:44%;
-        transform:translateY(-50%);width:900px;z-index:3">${LOCKUP}</div>
-   <div class="rule" style="position:absolute;left:34px;top:70%;width:270px;margin:0;z-index:3"></div>
-   <div class="label" style="position:absolute;left:34px;top:76%;font-size:16px;z-index:3">Currently offline</div>` },
  'youtube-thumbnail-template': { w:1280, h:720, custom:`
    <div class="shard"></div><div class="grain"></div>
    <div style="position:absolute;inset:0;border:3px dashed rgba(255,255,255,.18)"></div>
@@ -156,7 +148,7 @@ const EXTRA = {
   for (const [name, s] of Object.entries(ALL)) {
     if (only && name !== only) continue;
     const page = await browser.newPage({ viewport: { width: s.w, height: s.h }, deviceScaleFactor: 1 });
-    const inner = s.custom !== undefined ? s.custom : (s.overlap ? overlap(s) : render(s));
+    const inner = s.fn ? s.fn(s) : (s.custom !== undefined && s.custom !== null ? s.custom : (s.overlap ? overlap(s) : render(s)));
     await page.setContent(`<style>${CSS}</style><div class="stage" style="width:${s.w}px;height:${s.h}px">${inner}</div>`);
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(900);
