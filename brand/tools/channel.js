@@ -50,7 +50,7 @@ const SCENES = {
         transform:translateY(-50%);width:1382px;z-index:3">${LOCKUP_WHITE}</div>
    <div class="rule" style="position:absolute;left:130px;top:55%;width:330px;margin:0;z-index:3"></div>
    <div class="ph" style="position:absolute;left:130px;top:59%;font-size:34px;line-height:1.7;
-        color:#D62325;z-index:3">
+        color:#FFFFFF;z-index:3">
      <div>PLACEHOLDER &mdash; your schedule here</div>
      <div>PLACEHOLDER &mdash; @yourhandle</div>
    </div>
