@@ -95,16 +95,13 @@ const EXTRA = {
  'youtube-banner': { w:YT.w, h:YT.h, custom:`
    <div class="shard"></div><div class="grain"></div>
    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-        width:${YT.safeW}px;height:${YT.safeH}px;display:flex;align-items:center;
-        gap:48px;padding:0 44px">
-     <div style="flex:1 1 auto;min-width:0">
-       <div class="lock" style="width:700px">${LOCKUP}</div>
-       <div class="rule" style="width:420px;margin-top:24px;margin-bottom:16px"></div>
-       <div class="label" style="font-size:22px">Forged live</div>
-     </div>
-     <div style="flex:0 0 330px;height:100%;display:flex;align-items:center;justify-content:flex-end">
-       <img src="${BUST}" style="height:100%;object-fit:contain">
-     </div>
+        width:${YT.safeW}px;height:${YT.safeH}px;overflow:hidden">
+     <img src="${PLATE}" style="position:absolute;right:40px;bottom:0;height:100%;
+          object-fit:contain;object-position:bottom;z-index:1">
+     <div class="lock" style="position:absolute;left:30px;top:46%;
+          transform:translateY(-50%);width:1120px;z-index:3">${LOCKUP}</div>
+     <div class="rule" style="position:absolute;left:30px;top:70%;width:300px;margin:0;z-index:3"></div>
+     <div class="label" style="position:absolute;left:30px;top:76%;font-size:17px;z-index:3">Forged live</div>
    </div>` },
  'youtube-thumbnail-template': { w:1280, h:720, custom:`
    <div class="shard"></div><div class="grain"></div>
