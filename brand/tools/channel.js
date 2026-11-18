@@ -10,6 +10,7 @@ const b64 = p => 'data:image/png;base64,' + fs.readFileSync(path.join(B, p)).toS
 const LOCKUP = read('lockup/lockup-stacked-ondark-redforge-neutral.svg');
 const LOCKUP_INLINE = read('lockup/lockup-inline-ondark-redforge-neutral.svg');
 const MARK = read('mark/mark-full-ondark-tight.svg');
+const LOCKUP_WHITE = read('lockup/lockup-stacked-ondark-neutral.svg');
 const PLATE = b64('mascot/mascot-plate.png');
 const BUST  = b64('mascot/mascot-bust.png');
 
@@ -43,7 +44,18 @@ const SCENES = {
  // Layout rule: two zones, no overlap. Type lives in the left zone,
  // the mascot is contained in the right zone and never crosses in.
  'twitch-banner': { w:1200, h:480, lock:775, plate:'104%', pad:52, label:'Forged live', ls:15, overlap:true },
- 'twitch-offline':{ w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Currently offline', ls:28, overlap:true },
+ 'twitch-offline': { w:1920, h:1080, custom:`
+   <div class="shard"></div><div class="grain"></div>
+   <img src="${PLATE}" style="position:absolute;right:26px;bottom:0;height:100%;
+        object-fit:contain;object-position:bottom;z-index:1">
+   <div class="lock" style="position:absolute;left:130px;top:46%;
+        transform:translateY(-50%);width:1382px;z-index:3">${LOCKUP_WHITE}</div>
+   <div class="rule" style="position:absolute;left:130px;top:55%;width:330px;margin:0;z-index:3"></div>
+   <div class="label" style="position:absolute;left:130px;top:59%;font-size:22px;z-index:3">Currently offline</div>
+   <div class="ph" style="position:absolute;left:130px;top:66%;font-size:17px;line-height:2;z-index:3">
+     <div>PLACEHOLDER &mdash; your schedule here</div>
+     <div>PLACEHOLDER &mdash; @yourhandle</div>
+   </div>` },
  'kick-banner':   { w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Forged live', ls:28, overlap:true },
  'kick-offline':  { w:1920, h:1080, lock:1240, plate:'97%', pad:130, label:'Stream ended', ls:28, overlap:true },
 };
