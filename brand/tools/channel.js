@@ -103,6 +103,22 @@ const EXTRA = {
      <div class="rule" style="position:absolute;left:30px;top:70%;width:300px;margin:0;z-index:3"></div>
      <div class="label" style="position:absolute;left:30px;top:76%;font-size:17px;z-index:3">Forged live</div>
    </div>` },
+ 'wide-live': { w:1546, h:423, custom:`
+   <div class="shard"></div><div class="grain"></div>
+   <img src="${PLATE}" style="position:absolute;right:46px;bottom:0;height:100%;
+        object-fit:contain;object-position:bottom;z-index:1">
+   <div class="lock" style="position:absolute;left:34px;top:44%;
+        transform:translateY(-50%);width:900px;z-index:3">${LOCKUP}</div>
+   <div class="rule" style="position:absolute;left:34px;top:70%;width:270px;margin:0;z-index:3"></div>
+   <div class="label" style="position:absolute;left:34px;top:76%;font-size:16px;z-index:3">Forged live</div>` },
+ 'wide-offline': { w:1546, h:423, custom:`
+   <div class="shard"></div><div class="grain"></div>
+   <img src="${PLATE}" style="position:absolute;right:46px;bottom:0;height:100%;
+        object-fit:contain;object-position:bottom;z-index:1">
+   <div class="lock" style="position:absolute;left:34px;top:44%;
+        transform:translateY(-50%);width:900px;z-index:3">${LOCKUP}</div>
+   <div class="rule" style="position:absolute;left:34px;top:70%;width:270px;margin:0;z-index:3"></div>
+   <div class="label" style="position:absolute;left:34px;top:76%;font-size:16px;z-index:3">Currently offline</div>` },
  'youtube-thumbnail-template': { w:1280, h:720, custom:`
    <div class="shard"></div><div class="grain"></div>
    <div style="position:absolute;inset:0;border:3px dashed rgba(255,255,255,.18)"></div>
