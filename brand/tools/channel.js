@@ -24,6 +24,9 @@ const CSS = `
  .shard{position:absolute;inset:0;z-index:0;background:
     linear-gradient(118deg, transparent 0 38%, rgba(214,35,37,.95) 38% 39.1%,
     transparent 39.1% 41%, rgba(214,35,37,.30) 41% 41.7%, transparent 41.7%)}
+ .shard-r{position:absolute;inset:0;z-index:0;background:
+    linear-gradient(118deg, transparent 0 54%, rgba(214,35,37,.95) 54% 55.1%,
+    transparent 55.1% 57%, rgba(214,35,37,.30) 57% 57.7%, transparent 57.7%)}
  .grain{position:absolute;inset:0;z-index:0;opacity:.05;background-image:
     repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 3px)}
  .plate{position:absolute;bottom:0;height:100%;object-fit:contain;object-position:bottom}
@@ -73,7 +76,7 @@ function panelHTML(title, w, h) {
 function sceneLeft(label, w, h) {
   const k = w / 1920;
   return `
-   <div class="shard"></div><div class="grain"></div>
+   <div class="shard-r"></div><div class="grain"></div>
    <img src="${PLATE}" style="position:absolute;left:${30*k}px;bottom:0;height:100%;
         object-fit:contain;object-position:bottom;z-index:2">
    <div class="lock" style="position:absolute;left:${880*k}px;top:40%;
