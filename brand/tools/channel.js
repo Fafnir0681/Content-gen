@@ -21,10 +21,10 @@ const CSS = `
  .stage{position:relative;overflow:hidden;background:
     radial-gradient(120% 90% at 18% 0%, #1A2027 0%, #0F1215 55%)}
  /* diagonal forge shard, echoes the glass sweep */
- .shard{position:absolute;inset:0;background:
+ .shard{position:absolute;inset:0;z-index:0;background:
     linear-gradient(118deg, transparent 0 38%, rgba(214,35,37,.95) 38% 39.1%,
     transparent 39.1% 41%, rgba(214,35,37,.30) 41% 41.7%, transparent 41.7%)}
- .grain{position:absolute;inset:0;opacity:.05;background-image:
+ .grain{position:absolute;inset:0;z-index:0;opacity:.05;background-image:
     repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 3px)}
  .plate{position:absolute;bottom:0;height:100%;object-fit:contain;object-position:bottom}
  .lock svg{display:block}
@@ -75,7 +75,7 @@ function sceneLeft(label, w, h) {
   return `
    <div class="shard"></div><div class="grain"></div>
    <img src="${PLATE}" style="position:absolute;left:${30*k}px;bottom:0;height:100%;
-        object-fit:contain;object-position:bottom;z-index:1">
+        object-fit:contain;object-position:bottom;z-index:2">
    <div class="lock" style="position:absolute;left:${880*k}px;top:40%;
         transform:translateY(-50%);width:${930*k}px;z-index:3">${LOCKUP_WHITE}</div>
    <div class="rule" style="position:absolute;left:${880*k}px;top:55%;width:${300*k}px;margin:0;z-index:3"></div>
