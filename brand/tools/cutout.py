@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-def main(src, dst, tol=28, feather=1.0):
+def main(src, dst, tol=20, feather=1.0, close=11):
     im = Image.open(src).convert('RGB')
     a = np.asarray(im).astype(np.int16)
     # background colour = most common pixel (flat ground)
@@ -30,7 +30,11 @@ def main(src, dst, tol=28, feather=1.0):
     dist = np.abs(a - bg).max(axis=2)
     solid = dist > tol
     # close gaps so antialiased outlines form a continuous boundary
-    closed = ndimage.binary_closing(solid, structure=np.ones((5, 5)), iterations=2)
+    # The closing radius matters: dark trousers connect to the background
+    # through the gap between the legs, so they are NOT an enclosed hole and
+    # fill_holes alone leaves them transparent. A radius of 11 seals that
+    # channel (trouser coverage 40% -> 98%) without closing the leg gap.
+    closed = ndimage.binary_closing(solid, structure=np.ones((close, close)), iterations=2)
     # largest connected component = the character
     lab, n = ndimage.label(closed)
     if n == 0:
@@ -52,5 +56,6 @@ def main(src, dst, tol=28, feather=1.0):
 if __name__ == '__main__':
     args = sys.argv[1:]
     main(args[0], args[1],
-         int(args[2]) if len(args) > 2 else 28,
-         float(args[3]) if len(args) > 3 else 1.0)
+         int(args[2]) if len(args) > 2 else 20,
+         float(args[3]) if len(args) > 3 else 1.0,
+         int(args[4]) if len(args) > 4 else 11)

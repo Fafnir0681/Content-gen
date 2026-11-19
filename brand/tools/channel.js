@@ -76,7 +76,7 @@ function panelHTML(title, w, h) {
 function sceneLeft(label, w, h) {
   const k = w / 1920;
   return `
-   <div class="shard-r"></div><div class="grain"></div>
+   <div class="shard"></div><div class="grain"></div>
    <img src="${PLATE}" style="position:absolute;left:${30*k}px;bottom:0;height:100%;
         object-fit:contain;object-position:bottom;z-index:2">
    <div class="lock" style="position:absolute;left:${880*k}px;top:40%;
