@@ -118,8 +118,11 @@ const C = {
        <div style="margin-top:9px;height:18px;border:2px solid rgba(255,255,255,.26);border-radius:10px"></div>
      </div>`).join('')}` },
 
- 'poll-bar-fill': { w:552, h:18, html:`
-   <div style="position:absolute;inset:0;background:#D62325;border-radius:9px"></div>` },
+ /* Interior size of the bar, NOT the outer box: the container is 18px tall
+    with a 2px border, so a same-size fill paints over the stroke.
+    Drop at x=26, y=145 / 237 / 329 within poll-frame. */
+ 'poll-bar-fill': { w:548, h:14, html:`
+   <div style="position:absolute;inset:0;background:#D62325;border-radius:7px"></div>` },
 
  'prediction-frame': { w:600, h:300, html:`
    <div class="panel"></div>

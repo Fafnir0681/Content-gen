@@ -17,13 +17,18 @@ Transparent PNGs, positioned as sources in OBS. Rebuild with
 | `timer-countdown.png` | 560x190 | "STARTING IN" + 00:00 slot |
 | `timer-countup.png` | 560x190 | "LIVE FOR" + 00:00 slot |
 | `poll-frame.png` | 600x400 | 3 options, **empty bars** |
-| `poll-bar-fill.png` | 552x18 | **separate file**; clip width to the percentage |
+| `poll-bar-fill.png` | 548x14 | **separate file**; clip width to the percentage |
 | `prediction-frame.png` | 600x300 | 2 outcomes, for Twitch predictions |
 
 ## Rules
 - Shared panel: `rgba(17,21,26,.90)` with a 5px `#D62325` left edge.
 - Never flatten the goal bar or the poll bars into one image — the fill has
   to be clippable.
+- **Fills are the INTERIOR size, not the outer box.** The bar container is
+  18px tall with a 2px border, so a fill the same size as the container
+  paints over the stroke. The poll fill is 548x14; drop it at x=26,
+  y=145 / 237 / 329 within `poll-frame.png` (y=145 / 237 for
+  `prediction-frame.png`).
 - Timer digits are placeholders on tabular numerals. The widget's own text
   sits on top; tabular spacing stops the digits jittering as they change.
 - Predictions are a different widget from polls (two outcomes, not three
