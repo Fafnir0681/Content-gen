@@ -14,10 +14,20 @@ Transparent PNGs, positioned as sources in OBS. Rebuild with
 | `socials-strip.png` | 760x92 | inline lockup + handle |
 | `label-donate/discord/commands.png` | 320x70 | call-to-action strips |
 | `gameplay-frame.png` | 1920x1080 | border, with red corner accents |
+| `timer-countdown.png` | 560x190 | "STARTING IN" + 00:00 slot |
+| `timer-countup.png` | 560x190 | "LIVE FOR" + 00:00 slot |
+| `poll-frame.png` | 600x400 | 3 options, **empty bars** |
+| `poll-bar-fill.png` | 552x18 | **separate file**; clip width to the percentage |
+| `prediction-frame.png` | 600x300 | 2 outcomes, for Twitch predictions |
 
 ## Rules
 - Shared panel: `rgba(17,21,26,.90)` with a 5px `#D62325` left edge.
-- Never flatten the goal bar into one image.
+- Never flatten the goal bar or the poll bars into one image — the fill has
+  to be clippable.
+- Timer digits are placeholders on tabular numerals. The widget's own text
+  sits on top; tabular spacing stops the digits jittering as they change.
+- Predictions are a different widget from polls (two outcomes, not three
+  options) and have their own frame.
 - Text placeholders (`@yourhandle`, track title, counts) are filled by the
   widget at runtime or edited in `tools/overlay.js`.
 - Verified against a mid-tone gameplay background, not just black — panels

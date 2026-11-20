@@ -83,6 +83,58 @@ const C = {
      <div class="muted" style="font-size:17px;letter-spacing:.10em">PLACEHOLDER &mdash; @yourhandle</div>
    </div>` },
 
+
+ 'timer-countdown': { w:560, h:190, html:`
+   <div class="panel"></div>
+   <div style="position:absolute;left:24px;top:26px"><span class="cap">Starting in</span></div>
+   <div style="position:absolute;left:24px;right:24px;top:58px;text-align:center">
+     <div class="val" style="font-size:88px;line-height:1;letter-spacing:.04em;
+          font-variant-numeric:tabular-nums">00:00</div>
+   </div>
+   <div style="position:absolute;left:24px;right:24px;bottom:18px;height:3px;
+        background:linear-gradient(90deg,#D62325,rgba(214,35,37,0))"></div>` },
+
+ 'timer-countup': { w:560, h:190, html:`
+   <div class="panel"></div>
+   <div style="position:absolute;left:24px;top:26px"><span class="cap">Live for</span></div>
+   <div style="position:absolute;left:24px;right:24px;top:58px;text-align:center">
+     <div class="val" style="font-size:88px;line-height:1;letter-spacing:.04em;
+          font-variant-numeric:tabular-nums">00:00</div>
+   </div>
+   <div style="position:absolute;left:24px;right:24px;bottom:18px;height:3px;
+        background:linear-gradient(90deg,#D62325,rgba(214,35,37,0))"></div>` },
+
+ 'poll-frame': { w:600, h:400, html:`
+   <div class="panel"></div>
+   <div style="position:absolute;left:24px;top:22px"><span class="cap">Poll</span></div>
+   <div class="icon" style="position:absolute;right:18px;top:16px;width:34px">${MARK}</div>
+   <div class="val" style="position:absolute;left:24px;top:52px;font-size:25px">&mdash;</div>
+   ${[0,1,2].map(i => `
+     <div style="position:absolute;left:24px;right:24px;top:${110 + i*92}px">
+       <div style="display:flex;justify-content:space-between;align-items:baseline">
+         <span class="muted" style="font-size:19px;letter-spacing:.06em">OPTION ${i+1}</span>
+         <span class="val" style="font-size:19px;font-variant-numeric:tabular-nums">0%</span>
+       </div>
+       <div style="margin-top:9px;height:18px;border:2px solid rgba(255,255,255,.26);border-radius:10px"></div>
+     </div>`).join('')}` },
+
+ 'poll-bar-fill': { w:552, h:18, html:`
+   <div style="position:absolute;inset:0;background:#D62325;border-radius:9px"></div>` },
+
+ 'prediction-frame': { w:600, h:300, html:`
+   <div class="panel"></div>
+   <div style="position:absolute;left:24px;top:22px"><span class="cap">Prediction</span></div>
+   <div class="icon" style="position:absolute;right:18px;top:16px;width:34px">${MARK}</div>
+   <div class="val" style="position:absolute;left:24px;top:52px;font-size:25px">&mdash;</div>
+   ${[0,1].map(i => `
+     <div style="position:absolute;left:24px;right:24px;top:${110 + i*92}px">
+       <div style="display:flex;justify-content:space-between;align-items:baseline">
+         <span class="muted" style="font-size:19px;letter-spacing:.06em">OUTCOME ${i+1}</span>
+         <span class="val" style="font-size:19px;font-variant-numeric:tabular-nums">0%</span>
+       </div>
+       <div style="margin-top:9px;height:18px;border:2px solid rgba(255,255,255,.26);border-radius:10px"></div>
+     </div>`).join('')}` },
+
  'label-donate':   { w:320, h:70, label:'Donate' },
  'label-discord':  { w:320, h:70, label:'Discord' },
  'label-commands': { w:320, h:70, label:'!commands' },
