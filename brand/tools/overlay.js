@@ -61,9 +61,13 @@ const C = {
    <div style="position:absolute;left:20px;right:20px;bottom:16px;height:16px;
         border:2px solid rgba(255,255,255,.28);border-radius:9px"></div>` },
 
+ /* Same convention as the poll fill: identical footprint to the frame, red
+    clipped to the padding box, so it drops at +0+0 over goalbar-frame.
+    To show P%, crop the width to 20 + round(520 * P/100). */
  'goalbar-fill': { w:560, h:84, html:`
-   <div style="position:absolute;left:22px;bottom:18px;width:516px;height:12px;
-        background:#D62325;border-radius:7px"></div>` },
+   <div style="position:absolute;left:20px;right:20px;bottom:16px;height:16px;
+        border:2px solid transparent;border-radius:9px;
+        background:#D62325;background-clip:padding-box"></div>` },
 
  'now-playing': { w:460, h:104, html:`
    <div class="panel"></div>
@@ -118,11 +122,15 @@ const C = {
        <div style="margin-top:9px;height:18px;border:2px solid rgba(255,255,255,.26);border-radius:10px"></div>
      </div>`).join('')}` },
 
- /* Interior size of the bar, NOT the outer box: the container is 18px tall
-    with a 2px border, so a same-size fill paints over the stroke.
-    Drop at x=26, y=145 / 237 / 329 within poll-frame. */
- 'poll-bar-fill': { w:548, h:14, html:`
-   <div style="position:absolute;inset:0;background:#D62325;border-radius:7px"></div>` },
+ /* Same footprint as the bar container (552x18). The red is painted only
+    inside the 2px border via background-clip: padding-box, so this drops at
+    the container's OWN origin and never needs nudging:
+      poll-frame      x=24, y=144 / 236 / 328
+      prediction-frame x=24, y=144 / 236
+    To show P%, crop the width to 2 + round(548 * P/100). */
+ 'poll-bar-fill': { w:552, h:18, html:`
+   <div style="position:absolute;inset:0;border:2px solid transparent;
+        border-radius:10px;background:#D62325;background-clip:padding-box"></div>` },
 
  'prediction-frame': { w:600, h:300, html:`
    <div class="panel"></div>

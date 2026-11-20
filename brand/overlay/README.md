@@ -9,7 +9,7 @@ Transparent PNGs, positioned as sources in OBS. Rebuild with
 | `chatbox.png` | 400x660 | frame only; chat widget sits inside it |
 | `recent-events.png` | 460x172 | latest follower / latest sub |
 | `goalbar-frame.png` | 560x84 | **frame only** |
-| `goalbar-fill.png` | 560x84 | **separate file** so the fill can animate; clip its width to the goal percentage |
+| `goalbar-fill.png` | 560x84 | **separate file**; drops at +0+0 over the frame |
 | `now-playing.png` | 460x104 | track title overlays the dash |
 | `socials-strip.png` | 760x92 | inline lockup + handle |
 | `label-donate/discord/commands.png` | 320x70 | call-to-action strips |
@@ -17,18 +17,29 @@ Transparent PNGs, positioned as sources in OBS. Rebuild with
 | `timer-countdown.png` | 560x190 | "STARTING IN" + 00:00 slot |
 | `timer-countup.png` | 560x190 | "LIVE FOR" + 00:00 slot |
 | `poll-frame.png` | 600x400 | 3 options, **empty bars** |
-| `poll-bar-fill.png` | 548x14 | **separate file**; clip width to the percentage |
+| `poll-bar-fill.png` | 552x18 | **separate file**; drops at the container origin |
 | `prediction-frame.png` | 600x300 | 2 outcomes, for Twitch predictions |
 
 ## Rules
 - Shared panel: `rgba(17,21,26,.90)` with a 5px `#D62325` left edge.
 - Never flatten the goal bar or the poll bars into one image — the fill has
   to be clippable.
-- **Fills are the INTERIOR size, not the outer box.** The bar container is
-  18px tall with a 2px border, so a fill the same size as the container
-  paints over the stroke. The poll fill is 548x14; drop it at x=26,
-  y=145 / 237 / 329 within `poll-frame.png` (y=145 / 237 for
-  `prediction-frame.png`).
+## Bar fills — the masking convention
+
+Every fill shares the **exact footprint of its container** and paints the red
+only inside the border, using a transparent 2px border with
+`background-clip: padding-box`. That means a fill drops at its container's
+own origin and is aligned by construction — no per-pixel nudging, and the
+container's stroke stays visible on all four sides.
+
+| Fill | Drop at | Width for P% |
+|---|---|---|
+| `goalbar-fill.png` | +0+0 over `goalbar-frame.png` | `20 + round(520 * P/100)` |
+| `poll-bar-fill.png` | x=24, y=144 / 236 / 328 in `poll-frame.png` | `2 + round(548 * P/100)` |
+| `poll-bar-fill.png` | x=24, y=144 / 236 in `prediction-frame.png` | same |
+
+Crop the fill from the left to the computed width; never scale it, or the
+rounded cap distorts.
 - Timer digits are placeholders on tabular numerals. The widget's own text
   sits on top; tabular spacing stops the digits jittering as they change.
 - Predictions are a different widget from polls (two outcomes, not three
