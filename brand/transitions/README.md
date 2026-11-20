@@ -48,3 +48,37 @@ channel, and a mixed sequence makes ffmpeg drop alpha for the whole clip.
 ## Not done
 No sound. A forge/anvil strike timed to the cover peak would suit it;
 ElevenLabs can generate that (sfx node, `eleven_text_to_sound_v3`).
+
+
+---
+
+# Intro / outro bumper
+
+`bumper.mp4` — 1920x1080, 4.0s, 30fps, H.264. `endcard.png` is its final
+frame, for use as a still end card.
+
+**Not a transition.** Nothing shows through a bumper, so it renders on an
+opaque ground and carries no alpha. The lockup is the subject here, where
+in the stinger it is a passenger.
+
+Beats: shards sweep in and cover (0.0-0.7s), shards slide off while the
+lockup scales and fades in (0.7-1.0s), red rule draws underneath
+(1.0-1.6s), hold to the end (1.6-4.0s).
+
+The long hold at the end is deliberate: an intro bumper is cut to by an
+editor, and a steady final second gives a clean out point. It also means
+the last frame is a usable end card, which is why `endcard.png` is just
+frame 119.
+
+## Regenerating
+
+    node tools/bumper.js
+    ffmpeg -y -framerate 30 -i .bumper-frames/%04d.png \
+      -c:v libx264 -pix_fmt yuv420p -crf 18 -preset slow -movflags +faststart \
+      brand/transitions/bumper.mp4
+    cp .bumper-frames/0119.png brand/transitions/endcard.png
+
+No PNG32 step needed here, unlike the stinger — there is no alpha to lose.
+
+## Not done
+No sound.
