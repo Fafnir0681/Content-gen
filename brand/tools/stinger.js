@@ -22,8 +22,14 @@ function frameHTML(t) {
       background:${red ? '#D62325' : '#0F1215'};
       box-shadow:-10px 0 0 0 ${red ? '#0F1215' : '#D62325'}"></div>`;
   }).join('');
-  // lockup flashes at the cover peak only
-  const peak = Math.max(0, 1 - Math.abs(t - 0.5) / 0.16);
+  // Lockup fades in approaching the cover, holds through the shard exit,
+  // then fades out before the clip ends. It must not still be opaque on the
+  // last frame or it hard-cuts over the newly revealed scene.
+  let peak;
+  if (t < 0.34)      peak = 0;
+  else if (t < 0.50) peak = (t - 0.34) / 0.16;   // fade in
+  else if (t < 0.86) peak = 1;                   // hold through the exit
+  else               peak = Math.max(0, 1 - (t - 0.86) / 0.14); // fade out
   const lock = peak > 0.01
     ? `<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(${0.94 + 0.06*peak});
          width:1100px;opacity:${peak.toFixed(3)};z-index:5">${LOCKUP}</div>` : '';

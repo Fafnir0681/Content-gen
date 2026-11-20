@@ -4,7 +4,22 @@
 (`alpha_mode=1` in the container, verified by decoding frames back to RGBA).
 
 Diagonal forge shards sweep in from the right, fully cover the frame at the
-midpoint, and sweep off to the left. The lockup flashes at the cover peak.
+midpoint, and sweep off to the left. The lockup fades in approaching the
+cover, **holds through the whole shard exit**, then fades out over the last
+few frames.
+
+## What a stinger is for
+It is a **transition element**, not a branding display. Its job is to cover
+the screen so the scene cut is hidden. The branding is a passenger.
+
+That is why the lockup must fade before the final frame: after the
+transition point the shards sweep off to reveal the NEW scene, so anything
+still opaque at the end hangs over that scene and then disappears at a hard
+cut, which reads as a glitch. Frame 47 is 1.4% opaque — verified.
+
+If you want a piece whose purpose IS to show the branding, that is a
+separate asset: an intro/outro bumper, which runs longer, does not need
+alpha, and holds the lockup as the subject rather than as a passenger.
 
 ## OBS setup
 - **Transition point: 800ms** (frame 24 of 48) — the moment the frame is
