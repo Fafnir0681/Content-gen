@@ -19,13 +19,33 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-def main(src, dst, tol=20, feather=1.0, close=11):
+def main(src, dst, tol=20, feather=1.0, close=11, bgmode='common'):
     im = Image.open(src).convert('RGB')
     a = np.asarray(im).astype(np.int16)
-    # background colour = most common pixel (flat ground)
-    flat = a.reshape(-1, 3)
-    uniq, counts = np.unique(flat, axis=0, return_counts=True)
-    bg = uniq[counts.argmax()]
+    # Background colour. 'common' (the most frequent pixel) works when the
+    # subject is small in frame. It FAILS when the subject fills the frame —
+    # on a close-up face it picks the skin tone — so 'corners' samples the
+    # four corner patches instead, which the subject never occupies.
+    if bgmode == 'corners':
+        h, w = a.shape[:2]
+        k = max(4, min(h, w) // 25)
+        # Inset past any decorative border the generator drew at the edge:
+        # sampling the extreme corner can key out the border colour instead
+        # of the real background.
+        o = max(k, min(h, w) // 9)
+        patches = np.concatenate([
+            a[o:o+k, o:o+k].reshape(-1, 3), a[o:o+k, -o-k:-o].reshape(-1, 3),
+            a[-o-k:-o, o:o+k].reshape(-1, 3), a[-o-k:-o, -o-k:-o].reshape(-1, 3)])
+        # Mode, not median: if some corners contain subject and others
+        # background, a median blends them into a colour present nowhere in
+        # the image. The mode returns the dominant real colour.
+        q = (patches // 8 * 8)
+        uniq, counts = np.unique(q, axis=0, return_counts=True)
+        bg = uniq[counts.argmax()].astype(np.int16)
+    else:
+        flat = a.reshape(-1, 3)
+        uniq, counts = np.unique(flat, axis=0, return_counts=True)
+        bg = uniq[counts.argmax()]
     # distance from background, per pixel
     dist = np.abs(a - bg).max(axis=2)
     solid = dist > tol
@@ -58,4 +78,5 @@ if __name__ == '__main__':
     main(args[0], args[1],
          int(args[2]) if len(args) > 2 else 20,
          float(args[3]) if len(args) > 3 else 1.0,
-         int(args[4]) if len(args) > 4 else 11)
+         int(args[4]) if len(args) > 4 else 11,
+         args[5] if len(args) > 5 else 'common')
