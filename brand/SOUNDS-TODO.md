@@ -1,7 +1,7 @@
 # Sound pass — do this where you can hear it
 
-Everything visual is done; these eleven cues are the only thing between the
-alerts/transitions and production ready. ElevenLabs generates them:
+Everything visual is done, animation included; these eleven cues are the only
+thing between the alerts/transitions and production ready. ElevenLabs generates them:
 node type `sfx`, model `eleven_text_to_sound_v3`.
 
 ## Design rule
@@ -25,6 +25,11 @@ is the signature, and the bigger the event, the bigger the strike.
 
 Raid should be the loudest and longest — it is the only alert that brings
 new viewers.
+
+**Every alert strike must land at 450 ms**, the frame the animation flashes
+and the mascot lands the pose. `resub` is the exception: two strikes, at
+450 ms and 630 ms. The alert widget starts the audio and the video together,
+so a strike that lands late reads as a sync fault rather than a style choice.
 
 ## Transitions
 

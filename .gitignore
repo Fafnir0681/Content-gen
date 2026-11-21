@@ -3,3 +3,9 @@
 __pycache__/
 *.pyc
 .claude/
+
+# build intermediates — regenerate with the tools in brand/tools/
+.alert-frames/
+.idle-frames/
+.stinger-frames/
+.bumper-frames/
