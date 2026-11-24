@@ -3,3 +3,8 @@
 __pycache__/
 *.pyc
 .claude/
+
+# build intermediates — regenerate with the tools in brand/tools/
+# pattern, not a list: every new generator writes its own .<name>-frames/ dir,
+# and enumerating them means the next one gets committed by accident
+.*-frames/
