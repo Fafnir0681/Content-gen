@@ -6,7 +6,9 @@ All 1080x1920 (9:16).
 |---|---|
 | `scene-starting/brb/ending.png` | vertical scene screens |
 | `overlay.png` | transparent on-stream overlay (nameplate + latest strip) |
-| `alert-position-follow.png` | shows where an alert sits in the vertical frame |
+| `alert-<name>.webm` | **portrait alerts**, 9 of them, alpha |
+| `alert-<name>.png` | the same alert's hold frame, as a still |
+| `alert-position-guide.png` | where an alert sits in the frame, against the safe box |
 | `clip-template.png` | hook text + clip slots, for Shorts/Reels/TikTok cuts |
 | `safe-zone-guide.png` | **check this first** — blocked areas in red, safe box in cyan |
 | `tiktok-avatar-512.png` | square profile image |
@@ -36,8 +38,28 @@ overlay, start a test live, and look at your own phone. Editor previews do
 not show live controls. If the real safe area is larger, widen `SAFE` in
 `tools/vertical.js` and re-render everything in one command.
 
-## Still vertical-specific work
-Vertical alerts reuse the horizontal alert art, re-anchored. If you stream
-vertical often, they would read better redrawn in a portrait shape.
+## Alerts
 
-Rebuild: `node tools/vertical.js`
+Redrawn in portrait, not the horizontal art re-anchored. The horizontal alert
+reads left to right — mascot, then a panel with a red left edge. Rotated into
+9:16 that wastes the frame, so the portrait version stacks it: mascot above,
+panel below, and the red bar becomes the panel's **top** edge. The mascot's
+feet overlap into the panel exactly as they overlapped its left edge before,
+and the bar passes **behind** the legs — the same stacking rule as the
+horizontal set.
+
+840x760, or 840x840 for raid. 840 fits inside the 856-wide safe box with 8px
+to spare each side, and the placement guide puts it at (68, 450) — centred in
+the safe rectangle.
+
+**Timing is identical to the horizontal alerts, impact at 450ms included, so
+one sound library serves both orientations.** Only the entry directions are
+rotated to match the layout: the bar draws out sideways, the panel opens
+downward, and the exit drifts down instead of left.
+
+Each alert's PNG still is its own hold frame at t=2.5s, taken from the same
+render, so the still and the video can never drift apart.
+
+Rebuild: `node tools/vertical.js` (scenes, overlay, clip template) and
+`node tools/valerts.js` (alerts; `valerts.js guide` re-renders only the
+placement guide).

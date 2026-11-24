@@ -5,7 +5,6 @@ __pycache__/
 .claude/
 
 # build intermediates — regenerate with the tools in brand/tools/
-.alert-frames/
-.idle-frames/
-.stinger-frames/
-.bumper-frames/
+# pattern, not a list: every new generator writes its own .<name>-frames/ dir,
+# and enumerating them means the next one gets committed by accident
+.*-frames/
